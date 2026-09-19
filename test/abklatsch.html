@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Abklatsch-Test</title></head>
+<body style="margin:0;background:#241f1b">
+<iframe id="spiel" src="../index.html?debug=1" style="width:800px;height:560px;border:0"></iframe>
+<pre id="log" style="color:#8f8;font:12px monospace;padding:8px;margin:0">läuft…</pre>
+<script>
+// Prüft den Weg vom Zeichenpuffer bis in den localStorage — also das, was passiert,
+// wenn jemand "Papier auflegen" drückt.
+const log = [];
+window.addEventListener('load', () => setTimeout(() => {
+  try {
+    const f = document.getElementById('spiel').contentWindow;
+    const api = f.farbmalen;
+    if (!api) throw new Error('kein Debug-Haken — lief das Spiel an?');
+
+    f.localStorage.removeItem('farbmalen.galerie');
+    const id = api.galerie.abklatschen(api.canvas);
+    const roh = f.localStorage.getItem('farbmalen.galerie');
+    const eintraege = JSON.parse(roh || '[]');
+    const e = eintraege[eintraege.length - 1];
+
+    log.push('Einträge im Speicher: ' + eintraege.length);
+    log.push('ID stimmt überein: ' + (e && e.id === id));
+    log.push('Vorschau ist JPEG: ' + (e && e.thumb.startsWith('data:image/jpeg;base64,')));
+    log.push('Vorschaugröße: ' + (e ? (e.thumb.length / 1024).toFixed(1) : '?') + ' kB');
+
+    // Neun weitere, um den Überlauf auf max. 8 zu prüfen.
+    for (let i = 0; i < 9; i++) api.galerie.abklatschen(api.canvas);
+    const nachher = JSON.parse(f.localStorage.getItem('farbmalen.galerie') || '[]');
+    log.push('nach 10 Abklatschen gespeichert: ' + nachher.length + ' (höchstens 8 erwartet)');
+    log.push(nachher.length <= 8 && nachher.length > 0 ? 'ERGEBNIS: ok' : 'ERGEBNIS: FEHLER');
+  } catch (err) { log.push('AUSNAHME: ' + err.message); }
+  document.getElementById('log').textContent = log.join('\n');
+}, 700));
+</script></body></html>

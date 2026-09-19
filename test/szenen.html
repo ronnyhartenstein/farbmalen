@@ -1,0 +1,126 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Szene</title>
+<style>body{margin:0;background:#241f1b}canvas{display:block;width:900px;height:620px}
+#cm-ruler{position:absolute;width:1cm;height:1cm;top:-10cm;left:-10cm}
+#log{position:fixed;left:4px;bottom:2px;margin:0;color:#4a4;font:11px monospace;white-space:pre}</style>
+</head><body>
+<div id="cm-ruler"></div>
+<canvas id="wanne" width="900" height="620"></canvas>
+<pre id="log">läuft…</pre>
+<script type="module">
+import { createContext } from '../src/gl/context.js';
+import { createBlitter } from '../src/gl/fbo.js';
+import { createFluid } from '../src/sim/fluid.js';
+import { createPinsel } from '../src/sim/splat.js';
+import { createGlitzer } from '../src/sim/glitter.js';
+import { createPresenter } from '../src/render/present.js';
+import { state } from '../src/state.js';
+import { PALETTE, hexZuPigment } from '../src/palette.js';
+import { WERKZEUGE, werkzeugNach, schuetteln } from '../src/tools/index.js';
+
+const log = [];
+const szene = new URLSearchParams(location.search).get('szene') || 'marmor';
+
+try {
+  const canvas = document.getElementById('wanne');
+  const { gl, fehler } = createContext(canvas);
+  if (!gl) throw new Error(fehler);
+
+  state.cssPxProCm = document.getElementById('cm-ruler').getBoundingClientRect().width;
+  state.wanneHoehePx = 620;
+  state.naesse = 0.12;
+  state.symmetrie = 1;
+
+  const blit = createBlitter(gl);
+  const fluid = createFluid(gl, blit);
+  const presenter = createPresenter(gl, blit);
+  const glitzer = createGlitzer(gl);
+  const pinsel = createPinsel(fluid, state);
+
+  const z = { x:.5, y:.5, px:.5, py:.5, dx:0, dy:0, tempo:0,
+              gedrueckt:false, neuGedrueckt:false, losgelassen:false, haltezeit:0 };
+  const dt = 1/60;
+  let schritte = 0;
+  const ctx = () => ({ pinsel, zeiger: z, state, audio: null,
+                       cmy: hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex) });
+
+  function bild(w) {
+    if (z.gedrueckt) z.haltezeit += dt;
+    if (z.neuGedrueckt) w?.onDown?.(ctx());
+    w?.tick?.(ctx(), dt);
+    z.neuGedrueckt = false; z.losgelassen = false;
+    fluid.step(dt, state.naesse);
+    glitzer.schritt(fluid.velocity, dt);
+    schritte++;
+  }
+  const runter = (x,y) => { z.x=z.px=x; z.y=z.py=y; z.dx=z.dy=0; z.gedrueckt=true; z.neuGedrueckt=true; z.haltezeit=0; };
+  const zu = (x,y) => { z.px=z.x; z.py=z.y; z.x=x; z.y=y; z.dx=x-z.px; z.dy=y-z.py; };
+  const hoch = () => { z.gedrueckt=false; z.losgelassen=true; z.dx=z.dy=0; };
+  const warte = (n) => { for (let i=0;i<n;i++) bild(null); };
+
+  function giessen(farbe, x, y, halten) {
+    state.farbe = farbe;
+    runter(x, y);
+    for (let i = 0; i < halten; i++) bild(werkzeugNach('giessen'));
+    hoch(); bild(null);
+  }
+  function ziehen(werkzeugId, punkte, proPunkt = 1) {
+    const w = werkzeugNach(werkzeugId);
+    runter(punkte[0][0], punkte[0][1]);
+    for (let i = 1; i < punkte.length; i++) {
+      zu(punkte[i][0], punkte[i][1]);
+      for (let k = 0; k < proPunkt; k++) bild(w);
+    }
+    hoch(); bild(w);
+  }
+  const bahn = (x0,y0,x1,y1,n,welle=0) => Array.from({length:n+1}, (_,i) => {
+    const t = i/n;
+    return [x0 + (x1-x0)*t, y0 + (y1-y0)*t + Math.sin(t*Math.PI*3)*welle];
+  });
+
+  const t0 = performance.now();
+
+  if (szene === 'marmor') {
+    // Wie beim echten Ebru: Farben auf die Fläche tropfen …
+    const farben = [6, 2, 9, 5, 0, 8];
+    for (let i = 0; i < 24; i++) {
+      giessen(farben[i % farben.length], 0.10 + (i % 6) * 0.16, 0.16 + Math.floor(i / 6) * 0.23, 15);
+    }
+    warte(60);
+    // … und dann den Kamm hindurchziehen, einmal quer, einmal hoch.
+    ziehen('rechen', bahn(0.05, 0.30, 0.95, 0.30, 36), 1);
+    warte(20);
+    ziehen('rechen', bahn(0.95, 0.68, 0.05, 0.68, 36), 1);
+    warte(20);
+    ziehen('rechen', bahn(0.30, 0.05, 0.30, 0.95, 30), 1);
+    warte(20);
+    ziehen('rechen', bahn(0.70, 0.95, 0.70, 0.05, 30), 1);
+    warte(90);
+  } else if (szene === 'mandala') {
+    state.symmetrie = 6;
+    giessen(9, 0.5, 0.5, 20);
+    state.symmetrie = 4;
+    giessen(6, 0.62, 0.58, 10);
+    giessen(2, 0.56, 0.68, 10);
+    warte(30);
+    ziehen('pinsel', bahn(0.58, 0.52, 0.74, 0.66, 24), 1);
+    warte(20);
+    ziehen('ruehrer', bahn(0.60, 0.60, 0.66, 0.54, 10), 6);
+    warte(60);
+  } else if (szene === 'werkzeuge') {
+    // Jedes Werkzeug einmal, zur Fehlersuche über alle Codepfade.
+    const farben = [0, 2, 5, 6, 9, 3];
+    for (let i = 0; i < 12; i++) giessen(farben[i % 6], 0.15 + (i % 4) * 0.23, 0.25 + Math.floor(i / 4) * 0.25, 5);
+    warte(40);
+    for (const w of WERKZEUGE) { ziehen(w.id, bahn(0.25, 0.35, 0.72, 0.62, 14, 0.04), 1); warte(15); }
+    schuetteln(pinsel);
+    warte(60);
+    log.push('Werkzeuge: ' + WERKZEUGE.map(w => w.id).join(', '));
+  }
+
+  presenter.render(fluid.dye.read, 1.0);
+  glitzer.zeichnen(3.2);
+  const ms = performance.now() - t0;
+  log.push(`${szene}: ${schritte} Schritte, ${ms.toFixed(0)} ms, GL-Fehler ${gl.getError()}`);
+} catch (e) { log.push('AUSNAHME: ' + e.message); }
+document.getElementById('log').textContent = log.join('\n');
+</script></body></html>

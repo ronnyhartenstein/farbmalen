@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Farbmalen</title>
+<meta name="description" content="Farbe gießen, zusehen wie sie zerläuft, darin herumrühren.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Referenz zum Ausmessen: ein echter Zentimeter auf diesem Bildschirm. -->
+  <div id="cm-ruler" aria-hidden="true"></div>
+
+  <canvas id="wanne"></canvas>
+
+  <div id="werkzeuge" class="werkzeuge" role="toolbar" aria-label="Werkzeuge"></div>
+  <div id="regler" class="regler"></div>
+
+  <div class="unten">
+    <p id="werkzeughinweis" class="werkzeughinweis"></p>
+    <div id="palette" class="palette" role="toolbar" aria-label="Farben"></div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="blitz" class="blitz" hidden></div>
+
+  <div id="galerie" class="galerie" hidden>
+    <div class="galerie-kopf">
+      <h2>Deine Abklatsche</h2>
+      <button id="galerie-zu" class="knopf knopf-text" type="button">Fertig</button>
+    </div>
+    <div id="galerie-liste" class="galerie-liste"></div>
+    <p id="galerie-leer" class="galerie-leer">Noch nichts abgeklatscht. Leg mal ein Papier auf!</p>
+  </div>
+
+  <div id="hinweis" class="hinweis" hidden>
+    <h1>Oh je.</h1>
+    <p id="hinweis-text"></p>
+  </div>
+
+  <div id="debug" class="debug" hidden></div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

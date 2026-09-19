@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Messung</title>
+<style>body{margin:0;background:#241f1b}canvas{display:block;width:800px;height:560px}
+#cm-ruler{position:absolute;width:1cm;height:1cm;top:-10cm;left:-10cm}
+#log{margin:0;padding:8px;color:#8f8;font:12px monospace;white-space:pre}</style>
+</head><body>
+<div id="cm-ruler"></div>
+<canvas id="wanne" width="800" height="560"></canvas>
+<pre id="log">läuft…</pre>
+<script type="module">
+import { createContext } from '../src/gl/context.js';
+import { createBlitter } from '../src/gl/fbo.js';
+import { createFluid } from '../src/sim/fluid.js';
+import { createPinsel } from '../src/sim/splat.js';
+import { createPresenter } from '../src/render/present.js';
+import { state } from '../src/state.js';
+import { PALETTE, hexZuPigment } from '../src/palette.js';
+import { werkzeugNach } from '../src/tools/index.js';
+
+const log = [];
+const B = 800, H = 560;
+
+try {
+  const canvas = document.getElementById('wanne');
+  const { gl, fehler } = createContext(canvas);
+  if (!gl) throw new Error(fehler);
+
+  state.cssPxProCm = document.getElementById('cm-ruler').getBoundingClientRect().width;
+  state.wanneHoehePx = H;
+  state.naesse = 0.12;
+
+  const blit = createBlitter(gl);
+  const fluid = createFluid(gl, blit);
+  const presenter = createPresenter(gl, blit);
+  const pinsel = createPinsel(fluid, state);
+
+  const z = { x:.5, y:.5, px:.5, py:.5, dx:0, dy:0, tempo:0,
+              gedrueckt:false, neuGedrueckt:false, losgelassen:false, haltezeit:0 };
+  const dt = 1/60;
+  const ctx = () => ({ pinsel, zeiger: z, state, audio: null,
+                       cmy: hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex) });
+
+  function tippen(x, y, halten = 0) {
+    const w = werkzeugNach('giessen');
+    z.x = z.px = x; z.y = z.py = y; z.dx = z.dy = 0; z.gedrueckt = true; z.haltezeit = 0;
+    w.onDown(ctx());
+    for (let i = 0; i < halten; i++) { z.haltezeit += dt; w.tick(ctx(), dt); }
+    z.gedrueckt = false;
+  }
+  const laufen = (n) => { for (let i = 0; i < n; i++) fluid.step(dt, state.naesse); };
+
+  const puffer = new Uint8Array(B * H * 4);
+  function lesen() { presenter.render(fluid.dye.read, 1.0); gl.readPixels(0, 0, B, H, gl.RGBA, gl.UNSIGNED_BYTE, puffer); }
+  // readPixels liest von unten, uv-y ebenfalls — passt direkt zusammen.
+  const px = (x, y) => { const i = ((y * B) + x) * 4; return [puffer[i], puffer[i+1], puffer[i+2]]; };
+
+  // Basislinie: dieselbe Zeile auf leerem Papier. Damit fallen Korn und
+  // Vignette aus der Messung heraus — verglichen wird nur, was die Farbe ändert.
+  const mitteY = Math.round(0.5 * H);
+  let basis = null;
+  function basisNehmen() {
+    lesen();
+    basis = [];
+    for (let x = 0; x < B; x++) basis.push(px(x, mitteY));
+  }
+  function spannweite(schwelle) {
+    lesen();
+    let l = -1, r = -1;
+    for (let x = 0; x < B; x++) {
+      const p = px(x, mitteY), b = basis[x];
+      const a = Math.abs(p[0]-b[0]) + Math.abs(p[1]-b[1]) + Math.abs(p[2]-b[2]);
+      if (a > schwelle) { if (l < 0) l = x; r = x; }
+    }
+    return l < 0 ? 0 : r - l + 1;
+  }
+
+  // --- A: Wie breit ist ein frischer Klecks wirklich? ---
+  basisNehmen();
+  state.farbe = 12;                      // Tiefschwarz, maximaler Kontrast
+  tippen(0.5, 0.5);
+  laufen(1);
+  const breitePx = spannweite(60);
+  log.push(`A) Klecksbreite: ${breitePx} px = ${(breitePx / state.cssPxProCm).toFixed(2)} cm  (1 cm = ${state.cssPxProCm.toFixed(1)} px)`);
+
+  // --- B: Mischen Gelb und Türkis zu Grün? ---
+  fluid.neuesBlatt();
+  state.farbe = 2;  tippen(0.47, 0.5, 120);   // Sonnengelb, satt aufgegossen
+  state.farbe = 5;  tippen(0.53, 0.5, 120);   // Türkis daneben
+  laufen(90);
+  lesen();
+  const mischung = px(Math.round(0.50 * B), mitteY);
+  const gelb     = px(Math.round(0.44 * B), mitteY);
+  const tuerkis  = px(Math.round(0.56 * B), mitteY);
+  log.push(`B) Gelb     rgb(${gelb.join(', ')})`);
+  log.push(`   Türkis   rgb(${tuerkis.join(', ')})`);
+  log.push(`   Mischung rgb(${mischung.join(', ')})  -> ${
+    mischung[1] > mischung[0] + 10 && mischung[1] > mischung[2] + 10 ? 'GRÜN ✓' : 'nicht grün ✗'}`);
+
+  // --- C: Zerläuft der Klecks messbar? ---
+  fluid.neuesBlatt();
+  basisNehmen();
+  state.farbe = 12;
+  tippen(0.5, 0.5);
+  laufen(1);
+  const vorher = spannweite(14);
+  laufen(60 * 30);                          // 30 Sekunden Simulationszeit
+  const nachher = spannweite(14);
+  log.push(`C) Zerlaufen: ${vorher} px -> ${nachher} px nach 30 s  (+${((nachher/vorher - 1) * 100).toFixed(0)} %)`);
+
+  // --- D: Rechen durch zwei Farbstreifen ---
+  fluid.neuesBlatt();
+  state.farbe = 7;  for (let i = 0; i < 9; i++) tippen(0.18 + i * 0.08, 0.62, 8);
+  state.farbe = 1;  for (let i = 0; i < 9; i++) tippen(0.18 + i * 0.08, 0.40, 8);
+  laufen(40);
+  const rechen = werkzeugNach('rechen');
+  z.gedrueckt = true;
+  for (let i = 1; i <= 34; i++) {
+    z.px = z.x; z.py = z.y;
+    z.x = 0.1 + i * 0.024; z.y = 0.5 + Math.sin(i / 6) * 0.07;
+    z.dx = z.x - z.px; z.dy = z.y - z.py;
+    rechen.tick(ctx(), dt);
+    fluid.step(dt, state.naesse);
+  }
+  z.gedrueckt = false;
+  laufen(90);
+  presenter.render(fluid.dye.read, 1.0);
+  log.push('D) Rechenmuster gezeichnet');
+  log.push('GL-Fehler: ' + gl.getError());
+} catch (e) {
+  log.push('AUSNAHME: ' + e.message + '\n' + e.stack);
+}
+document.getElementById('log').textContent = log.join('\n');
+</script></body></html>

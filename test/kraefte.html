@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Kraftmessung</title>
+<style>body{margin:0;background:#241f1b}canvas{display:block;width:640px;height:448px}
+#cm-ruler{position:absolute;width:1cm;height:1cm;top:-10cm;left:-10cm}
+#log{margin:0;padding:8px;color:#8f8;font:12px monospace;white-space:pre}</style>
+</head><body>
+<div id="cm-ruler"></div>
+<canvas id="wanne" width="640" height="448"></canvas>
+<pre id="log">läuft…</pre>
+<script type="module">
+import { createContext } from '../src/gl/context.js';
+import { createBlitter } from '../src/gl/fbo.js';
+import { createFluid } from '../src/sim/fluid.js';
+import { createPinsel } from '../src/sim/splat.js';
+import { createPresenter } from '../src/render/present.js';
+import { state } from '../src/state.js';
+import { PALETTE, hexZuPigment } from '../src/palette.js';
+
+const log = [];
+const B = 640, H = 448;
+
+try {
+  const canvas = document.getElementById('wanne');
+  const { gl } = createContext(canvas);
+  state.cssPxProCm = document.getElementById('cm-ruler').getBoundingClientRect().width;
+  state.wanneHoehePx = H;
+  state.naesse = 0.05;
+  state.symmetrie = 1;
+
+  const blit = createBlitter(gl);
+  const fluid = createFluid(gl, blit);
+  const presenter = createPresenter(gl, blit);
+  const pinsel = createPinsel(fluid, state);
+  const dt = 1 / 60;
+  const schwarz = hexZuPigment('#151515');
+  const puffer = new Uint8Array(B * H * 4);
+  const laufen = (n) => { for (let i = 0; i < n; i++) fluid.step(dt, state.naesse); };
+
+  // Schwerpunkt und Streuung der Farbe, gewichtet nach Dunkelheit.
+  function schwerpunkt() {
+    presenter.render(fluid.dye.read, 1.0);
+    gl.readPixels(0, 0, B, H, gl.RGBA, gl.UNSIGNED_BYTE, puffer);
+    let m = 0, sx = 0, sy = 0, s2 = 0;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < B; x += 2) {
+      const i = (y * B + x) * 4;
+      const w = Math.max(0, 235 - puffer[i]);
+      if (w < 25) continue;
+      m += w; sx += w * (x / B); sy += w * (y / H);
+    }
+    if (m === 0) return { x: 0.5, y: 0.5, r: 0, masse: 0 };
+    const cx = sx / m, cy = sy / m;
+    for (let y = 0; y < H; y += 2) for (let x = 0; x < B; x += 2) {
+      const i = (y * B + x) * 4;
+      const w = Math.max(0, 235 - puffer[i]);
+      if (w < 25) continue;
+      const dx = x / B - cx, dy = y / H - cy;
+      s2 += w * (dx * dx + dy * dy);
+    }
+    return { x: cx, y: cy, r: Math.sqrt(s2 / m), masse: m };
+  }
+
+  const klecks = (x, y, r = 0.55) => fluid.splatDye(x, y, schwarz, state.cmToUv(r), 1.6);
+
+  // --- Schub, jetzt auch mit schmaler Zinke wie beim Rechen ---
+  for (const [radius, etikett] of [[0.5, 'breit  '], [0.2, 'schmal ']]) {
+    log.push(`Schub ${etikett}(Strichlänge 0,30 uv)`);
+    for (const kraft of [8, 14, 20, 28]) {
+      fluid.neuesBlatt();
+      klecks(0.40, 0.5);
+      laufen(2);
+      const vorher = schwerpunkt();
+      const n = 20, schritt = 0.30 / n;
+      for (let i = 1; i <= n; i++) {
+        pinsel.schub(0.25 + i * schritt, 0.5, schritt, 0, kraft, radius);
+        fluid.step(dt, state.naesse);
+      }
+      laufen(90);
+      const nachher = schwerpunkt();
+      const weg = nachher.x - vorher.x;
+      log.push(`  kraft ${String(kraft).padStart(2)}  ->  ${(weg / 0.30).toFixed(2)}× Strichlänge, Streuung ${vorher.r.toFixed(3)} -> ${nachher.r.toFixed(3)}`);
+    }
+  }
+
+  // --- Radial, größerer Bereich ---
+  log.push('Radial (einmaliger Stoß)');
+  for (const wucht of [2, 4, 8, 14]) {
+    fluid.neuesBlatt();
+    for (let i = 0; i < 9; i++) klecks(0.5 + Math.cos(i) * 0.05, 0.5 + Math.sin(i) * 0.05, 0.7);
+    laufen(2);
+    const vorher = schwerpunkt();
+    pinsel.radial(0.5, 0.5, wucht, 2.4);
+    laufen(120);
+    const nachher = schwerpunkt();
+    log.push(`  wucht ${String(wucht).padStart(2)}  ->  Radius ${vorher.r.toFixed(3)} -> ${nachher.r.toFixed(3)} uv`);
+  }
+
+  // --- Wirbel, größerer Bereich, Winkel aufsummiert statt abgelesen ---
+  log.push('Wirbel (1 s halten, danach 0,5 s auslaufen)');
+  for (const staerke of [0.5, 1.5, 4, 9]) {
+    fluid.neuesBlatt();
+    klecks(0.60, 0.5, 0.6);
+    laufen(2);
+    let vorheriger = schwerpunkt();
+    let w0 = Math.atan2(vorheriger.y - 0.5, vorheriger.x - 0.5);
+    let summe = 0;
+    for (let s2 = 0; s2 < 18; s2++) {
+      for (let i = 0; i < 5; i++) {
+        if (s2 < 12) pinsel.wirbel(0.5, 0.5, staerke * dt, 1.3);
+        fluid.step(dt, state.naesse);
+      }
+      const jetzt = schwerpunkt();
+      const w1 = Math.atan2(jetzt.y - 0.5, jetzt.x - 0.5);
+      let d = w1 - w0;
+      while (d > Math.PI) d -= 2 * Math.PI;
+      while (d < -Math.PI) d += 2 * Math.PI;
+      summe += d; w0 = w1;
+    }
+    log.push(`  stärke ${String(staerke).padStart(3)}  ->  ${(summe * 180 / Math.PI).toFixed(0)}°`);
+  }
+  log.push('GL-Fehler: ' + gl.getError());
+} catch (e) { log.push('AUSNAHME: ' + e.message); }
+document.getElementById('log').textContent = log.join('\n');
+</script></body></html>

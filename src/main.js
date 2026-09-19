@@ -1,0 +1,227 @@
+// Farbmalen — Aufbau und Bildschleife.
+
+import { createContext, zeigeHinweis } from './gl/context.js';
+import { createBlitter } from './gl/fbo.js';
+import { createFluid } from './sim/fluid.js';
+import { createPinsel } from './sim/splat.js';
+import { createGlitzer } from './sim/glitter.js';
+import { createPresenter } from './render/present.js';
+import { createZeiger } from './input/pointer.js';
+import { createAudio } from './audio/sfx.js';
+import { state } from './state.js';
+import { PALETTE, hexZuPigment } from './palette.js';
+import { WERKZEUGE, werkzeugNach, schuetteln } from './tools/index.js';
+import { createToolbar, createRegler } from './ui/toolbar.js';
+import { createPalette } from './ui/palette.js';
+import { createGalerie } from './ui/gallery.js';
+
+state.laden();
+
+const canvas = document.getElementById('wanne');
+const { gl, fehler } = createContext(canvas);
+
+if (!gl) {
+  zeigeHinweis(fehler);
+} else {
+  los(gl);
+}
+
+function los(gl) {
+  const dprGrenze = 2;
+  let dpr = 1;
+
+  function kalibriere() {
+    // Ein echter Zentimeter auf diesem Bildschirm, gemessen statt geraten.
+    const lineal = document.getElementById('cm-ruler').getBoundingClientRect().width;
+    state.cssPxProCm = lineal > 4 ? lineal : 37.8;
+    state.wanneHoehePx = canvas.clientHeight || 800;
+  }
+
+  function passeGroesseAn(fluid) {
+    dpr = Math.min(window.devicePixelRatio || 1, dprGrenze);
+    const b = Math.max(1, Math.round(canvas.clientWidth * dpr));
+    const h = Math.max(1, Math.round(canvas.clientHeight * dpr));
+    if (canvas.width === b && canvas.height === h) return false;
+    canvas.width = b;
+    canvas.height = h;
+    kalibriere();
+    fluid?.resize();
+    return true;
+  }
+
+  passeGroesseAn(null);
+  kalibriere();
+
+  const blit = createBlitter(gl);
+  const fluid = createFluid(gl, blit);
+  const presenter = createPresenter(gl, blit);
+  const glitzer = createGlitzer(gl);
+  const pinsel = createPinsel(fluid, state);
+  const eingabe = createZeiger(canvas);
+  const zeiger = eingabe.zeiger;
+  const audio = createAudio(state);
+  const galerie = createGalerie();
+
+  let abklatschAusstehend = false;
+
+  const aktionen = {
+    beiWechsel: () => audio.klick(),
+    abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
+    galerie: () => (galerie.offen ? galerie.schliessen() : galerie.oeffnen()),
+    neuesBlatt: () => {
+      if (!confirm('Alles wegwischen und neu anfangen?')) return;
+      fluid.neuesBlatt();
+      melde('Frisches Blatt');
+    },
+    vollbild: () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen?.();
+    },
+  };
+
+  const toolbar = createToolbar(state, aktionen);
+  createRegler(state, aktionen);
+  createPalette(state, aktionen);
+
+  // --- Tastatur ---
+
+  window.addEventListener('keydown', (ev) => {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const taste = ev.key.toLowerCase();
+
+    if (taste === 'escape' && galerie.offen) { galerie.schliessen(); return; }
+
+    const ziffer = Number(ev.key);
+    if (Number.isInteger(ziffer) && ziffer >= 1 && ziffer <= WERKZEUGE.length) {
+      toolbar.waehleIndex(ziffer - 1);
+      ev.preventDefault();
+      return;
+    }
+
+    if (taste === ' ') {
+      audio.aufwecken();
+      schuetteln(pinsel);
+      audio.schuetteln();
+      ev.preventDefault();
+    } else if (taste === 'c') {
+      aktionen.neuesBlatt();
+    } else if (taste === 's') {
+      aktionen.abklatsch();
+    } else if (taste === 'g') {
+      aktionen.galerie();
+    } else if (taste === 'f') {
+      aktionen.vollbild();
+    } else if (taste === 'm') {
+      state.ton = !state.ton;
+      state.speichern();
+      document.getElementById('r-ton')?.setAttribute('aria-pressed', String(state.ton));
+      melde(state.ton ? 'Ton an' : 'Ton aus');
+    }
+  });
+
+  // --- Rückmeldungen ---
+
+  const toast = document.getElementById('toast');
+  let toastTimer = 0;
+  function melde(text) {
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 1600);
+  }
+
+  const blitzEl = document.getElementById('blitz');
+  function blitzen() {
+    blitzEl.hidden = true;
+    void blitzEl.offsetWidth; // Animation neu starten
+    blitzEl.hidden = false;
+    setTimeout(() => { blitzEl.hidden = true; }, 340);
+  }
+
+  // --- Ein Willkommensbild, damit die Wanne nicht leer dasteht ---
+
+  function willkommen() {
+    const farben = [0, 5, 2, 9, 6];
+    farben.forEach((f, i) => {
+      const w = (i / farben.length) * Math.PI * 2 + 0.4;
+      const x = 0.5 + Math.cos(w) * 0.16;
+      const y = 0.5 + Math.sin(w) * 0.16;
+      fluid.splatDye(x, y, hexZuPigment(PALETTE[f].hex), state.cmToUv(0.9), 1.1);
+      fluid.splatRadial(x, y, 2.0 * fluid.velocity.height, state.cmToUv(1.2));
+    });
+    fluid.splatVortex(0.5, 0.5, 1.2 * fluid.velocity.height, state.cmToUv(4));
+  }
+  willkommen();
+
+  // --- Bildschleife ---
+
+  const debugEl = document.getElementById('debug');
+  const debugAn = new URLSearchParams(location.search).has('debug');
+  if (debugAn) {
+    debugEl.hidden = false;
+    // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, galerie, melde };
+  }
+
+  let letzte = performance.now();
+  let fpsGlatt = 60;
+
+  function frame(jetzt) {
+    const roh = (jetzt - letzte) / 1000;
+    letzte = jetzt;
+    // Nie größere Zeitschritte als 1/60 s — sonst wird die Simulation instabil,
+    // etwa wenn der Tab im Hintergrund war.
+    const dt = Math.min(Math.max(roh, 1 / 240), 1 / 60);
+
+    passeGroesseAn(fluid);
+
+    eingabe.frameBeginn(dt);
+
+    const werkzeug = werkzeugNach(state.werkzeug);
+    const ctx = {
+      pinsel,
+      zeiger,
+      state,
+      audio,
+      cmy: hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex),
+    };
+
+    if (zeiger.neuGedrueckt) {
+      audio.aufwecken();
+      werkzeug.onDown?.(ctx);
+    }
+    werkzeug.tick?.(ctx, dt);
+    if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
+
+    fluid.step(dt, state.naesse);
+    if (state.glitzer) glitzer.schritt(fluid.velocity, dt);
+
+    presenter.render(fluid.dye.read, 1.0);
+    if (state.glitzer) glitzer.zeichnen(3.2 * dpr);
+
+    // Muss im selben Bild passieren, solange der Zeichenpuffer noch steht.
+    if (abklatschAusstehend) {
+      abklatschAusstehend = false;
+      galerie.abklatschen(canvas);
+      blitzen();
+      audio.klick();
+      melde('Abgeklatscht! Liegt in der Galerie.');
+    }
+
+    audio.tick(dt);
+
+    if (debugAn) {
+      fpsGlatt += (1 / Math.max(roh, 1e-4) - fpsGlatt) * 0.08;
+      debugEl.textContent =
+        `${fpsGlatt.toFixed(0)} fps\n` +
+        `Wanne  ${canvas.width}×${canvas.height} @${dpr}\n` +
+        `Farbe  ${fluid.dye.width}×${fluid.dye.height}\n` +
+        `Fluss  ${fluid.velocity.width}×${fluid.velocity.height}\n` +
+        `1 cm   ${state.cssPxProCm.toFixed(1)} px`;
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  requestAnimationFrame(frame);
+}

@@ -1,0 +1,104 @@
+# Farbmalen
+
+Farbe in eine Wanne gießen, zusehen wie sie zerläuft, mit Rührer und Rechen darin
+herumfahren, bis sich alles marmoriert. Kein Ziel, kein Punktestand — ein digitaler
+Marmorierteller zum Spielen.
+
+**→ [Jetzt spielen](https://ronnyhartenstein.github.io/farbmalen/)**
+
+## Starten
+
+Es gibt nichts zu installieren und nichts zu bauen. Nur ein Server muss her, weil
+der Browser ES-Module nicht von `file://` lädt:
+
+```bash
+python3 -m http.server 8080
+# → http://localhost:8080
+```
+
+Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen.
+
+## Bedienung
+
+| Taste | Werkzeug | Was es tut |
+|---|---|---|
+| `1` | **Gießen** | Klick = ein Klecks von ca. 1 cm. Gedrückt halten schüttet nach: die Pfütze wächst und drückt die Nachbarn weg. |
+| `2` | **Pinsel** | Zieht Farbe und Strömung entlang des Strichs. Je schneller, desto mehr Schwung. |
+| `3` | **Schaber** | Eine breite flache Kante, die Farbe zur Seite schiebt, ohne selbst welche aufzutragen. |
+| `4` | **Rührer** | Dreht langsam und zieht Farben spiralig ineinander. |
+| `5` | **Rechen** | Sieben Zinken quer zur Bewegung — das ergibt das klassische Marmormuster. |
+| `6` | **Pusten** | Bläst die Farbe nach außen, wie durch einen Strohhalm. |
+| `7` | **Seife** | Ein Klick, und die Farbe flieht schlagartig. Der Milch-und-Lebensmittelfarbe-Versuch. |
+| `8` | **Wasser** | Verdünnt das Pigment — zum Aufhellen und Wegwischen. |
+
+| Taste | Wirkung |
+|---|---|
+| `Leertaste` | Schütteln — die ganze Wanne schwappt durch |
+| `C` | Neues Blatt (mit Rückfrage) |
+| `S` | Papier auflegen (Abklatsch in die Galerie) |
+| `G` | Galerie auf/zu |
+| `F` | Vollbild |
+| `M` | Ton an/aus |
+
+Rechts oben außerdem: **Spiegel** macht aus jedem Strich sofort ein Mandala,
+**Nässe** stellt ein, wie schnell die Farbe zerläuft, und **Glitzer** streut Partikel
+ein, die auf der Strömung mitschwimmen.
+
+## Wie es funktioniert
+
+Kern ist eine echte Strömungssimulation auf der GPU (Stable Fluids nach Jos Stam,
+WebGL2). Es gibt genau zwei Felder: **wohin fließt es** und **welches Pigment liegt wo**.
+Werkzeuge schreiben ausschließlich in diese beiden Felder — deshalb funktioniert jedes
+Werkzeug automatisch mit jeder Farbe und mit jedem anderen Werkzeug zusammen. Der Rührer
+rührt, weil die Physik rührt, nicht weil jemand „Rühren" programmiert hat.
+
+Zwei Entscheidungen prägen das Ergebnis:
+
+- **Farbe mischt sich subtraktiv.** Das Farbfeld speichert optische Dichte (`-ln(rgb)`),
+  nicht RGB. Beim Anzeigen wird per Beer-Lambert daraus wieder Licht. Dadurch ergibt
+  Gelb + Türkis echtes Grün statt trübem Grau — wie im Tuschkasten und nicht wie bei
+  zwei Taschenlampen.
+- **Transport per MacCormack.** Einfaches Semi-Lagrange-Advektieren verwischt bei jedem
+  Schritt; nach ein paar Sekunden Rühren wäre aus kräftiger Farbe Pastellnebel geworden.
+  Die Hin-und-zurück-Korrektur hält die Marmorierfäden scharf.
+
+Und `1 cm` ist wörtlich gemeint: Ein verstecktes `<div style="width:1cm">` wird
+ausgemessen, alle Werkzeuggrößen sind in Zentimetern definiert. Mit dem Lineal am
+Bildschirm nachprüfbar.
+
+## Aufbau
+
+```
+index.html            Gerüst, style.css      Oberfläche
+src/gl/               WebGL-Unterbau: Kontext, Shader, Renderziele
+src/sim/fluid.js      Der Simulationsschritt
+src/sim/splat.js      Einzige Stelle, an der Werkzeuge die Simulation berühren (inkl. Spiegelmodus)
+src/sim/glitter.js    Glitzerpartikel per Transform Feedback
+src/render/present.js Pigment → Licht, Papier, nasser Glanz
+src/tools/            Ein Werkzeug = eine Datei mit onDown/tick/onUp
+src/ui/               Werkzeugleiste, Farbpalette, Galerie
+src/audio/sfx.js      Töne, komplett synthetisch (keine Audio-Dateien)
+test/                 Prüfseiten, siehe unten
+```
+
+Ein neues Werkzeug braucht eine Datei in `src/tools/` und einen Eintrag in
+`src/tools/index.js` — Leiste und Tastenbelegung ergeben sich daraus von selbst.
+
+## Prüfseiten
+
+Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der Seite:
+
+| Seite | Prüft |
+|---|---|
+| `test/messung.html` | Klecksbreite in cm, ob Gelb + Türkis grün wird, wie weit ein Klecks in 30 s zerläuft |
+| `test/kraefte.html` | Wie weit jedes Werkzeug die Farbe tatsächlich bewegt — die Grundlage der Kraftkonstanten |
+| `test/szenen.html` | Fertige Bilder: `?szene=marmor`, `?szene=mandala`, `?szene=werkzeuge` |
+| `test/abklatsch.html` | Weg vom Zeichenpuffer in die Galerie samt Speicherüberlauf |
+
+Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
+so laufen sie auch in einem headless gestarteten Browser durch.
+
+## Voraussetzungen
+
+WebGL2 mit Fließkomma-Renderzielen. Das können aktuelle Versionen von Chrome, Firefox
+und Safari. Fehlt es, erscheint statt eines schwarzen Bildes ein Hinweis.
