@@ -1,0 +1,17 @@
+# Statischer Server für die Entwicklung. Es wird nichts gebaut und nichts installiert —
+# der Ordner wird einfach ausgeliefert.
+#
+#   docker compose up -d   →  http://localhost:8080
+#
+# Genauso gut tut es `python3 -m http.server 8080`; Docker ist nur bequemer,
+# wenn ohnehin alles andere darin läuft.
+
+services:
+  farbmalen:
+    image: nginx:alpine
+    container_name: farbmalen
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/usr/share/nginx/html:ro
+    restart: unless-stopped

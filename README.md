@@ -4,7 +4,7 @@ Farbe in eine Wanne gießen, zusehen wie sie zerläuft, mit Rührer und Rechen d
 herumfahren, bis sich alles marmoriert. Kein Ziel, kein Punktestand — ein digitaler
 Marmorierteller zum Spielen.
 
-**→ [Jetzt spielen](https://ronnyhartenstein.github.io/farbmalen/)**
+**→ [Jetzt spielen](http://blog.rh-flow.de/farbmalen/)**
 
 ## Starten
 
@@ -12,8 +12,9 @@ Es gibt nichts zu installieren und nichts zu bauen. Nur ein Server muss her, wei
 der Browser ES-Module nicht von `file://` lädt:
 
 ```bash
+docker compose up -d      # → http://localhost:8080
+# oder ohne Docker:
 python3 -m http.server 8080
-# → http://localhost:8080
 ```
 
 Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen.
