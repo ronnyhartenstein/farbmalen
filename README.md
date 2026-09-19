@@ -95,6 +95,7 @@ Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der
 | `test/kraefte.html` | Wie weit jedes Werkzeug die Farbe tatsächlich bewegt — die Grundlage der Kraftkonstanten |
 | `test/szenen.html` | Fertige Bilder: `?szene=marmor`, `?szene=mandala`, `?szene=werkzeuge` |
 | `test/abklatsch.html` | Weg vom Zeichenpuffer in die Galerie samt Speicherüberlauf |
+| `test/diagnose.html` | Ob dieser Browser alles kann, was die Simulation braucht — erste Anlaufstelle, wenn es irgendwo schwarz bleibt |
 
 Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
 so laufen sie auch in einem headless gestarteten Browser durch.

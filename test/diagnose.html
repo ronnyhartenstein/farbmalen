@@ -1,0 +1,79 @@
+<!DOCTYPE html><html lang="de"><head><meta charset="utf-8"><title>Diagnose</title>
+<style>body{margin:0;background:#111;color:#8f8;font:13px/1.5 ui-monospace,monospace}
+#wanne{display:block;width:420px;height:280px;border-bottom:2px solid #444}
+#log{padding:10px;margin:0;white-space:pre-wrap}
+#cm-ruler{position:absolute;width:1cm;height:1cm;top:-10cm;left:-10cm}</style>
+</head><body>
+<div id="cm-ruler"></div>
+<canvas id="wanne" width="420" height="280"></canvas>
+<pre id="log">läuft…</pre>
+<script type="module">
+// Diagnoseseite: sagt, ob dieser Browser alles kann, was die Simulation braucht —
+// und meldet Ergebnisse als Text, damit sie auch auf einem Screenshot lesbar sind.
+import { createContext } from '../src/gl/context.js';
+import { createBlitter } from '../src/gl/fbo.js';
+import { createFluid } from '../src/sim/fluid.js';
+import { createPresenter } from '../src/render/present.js';
+import { state } from '../src/state.js';
+import { hexZuPigment } from '../src/palette.js';
+
+const zeilen = [];
+const sag = (t) => zeilen.push(t);
+
+try {
+  const canvas = document.getElementById('wanne');
+  const { gl, fehler } = createContext(canvas);
+  if (!gl) throw new Error(fehler);
+
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  sag('Renderer: ' + (info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)));
+  sag('GLSL:     ' + gl.getParameter(gl.SHADING_LANGUAGE_VERSION));
+  sag('color_buffer_float: ' + !!gl.getExtension('EXT_color_buffer_float'));
+  sag('float_blend:        ' + !!gl.getExtension('EXT_float_blend'));
+  sag('half_float_linear:  ' + !!gl.getExtension('OES_texture_half_float_linear'));
+
+  // Lässt sich in jedes benötigte Format überhaupt rendern?
+  for (const [name, ifmt, fmt] of [['RGBA16F','RGBA16F','RGBA'], ['RG16F','RG16F','RG'], ['R16F','R16F','RED']]) {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl[ifmt], 8, 8, 0, gl[fmt], gl.HALF_FLOAT, null);
+    const f = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, f);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+    const st = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+    sag(`${name.padEnd(8)} Renderziel: ${st === gl.FRAMEBUFFER_COMPLETE ? 'ok' : 'FEHLER 0x' + st.toString(16)}`);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  }
+
+  state.cssPxProCm = document.getElementById('cm-ruler').getBoundingClientRect().width;
+  state.wanneHoehePx = 280;
+  state.naesse = 0.1;
+
+  const blit = createBlitter(gl);
+  const fluid = createFluid(gl, blit);
+  const presenter = createPresenter(gl, blit);
+  sag(`Gitter: Farbe ${fluid.dye.width}×${fluid.dye.height}, Fluss ${fluid.velocity.width}×${fluid.velocity.height}`);
+
+  // Ein leeres Blatt muss Papierweiß ergeben, ein Klecks muss farbig sein.
+  const lies = () => {
+    const p = new Uint8Array(4);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.readPixels(210, 140, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, p);
+    return `rgb(${p[0]}, ${p[1]}, ${p[2]})`;
+  };
+
+  presenter.render(fluid.dye.read, 1.0);
+  sag('leeres Blatt in der Mitte: ' + lies() + '   (Papierweiß erwartet)');
+
+  fluid.splatDye(0.5, 0.5, hexZuPigment('#2f7fe0'), state.cmToUv(1.6), 1.6);
+  for (let i = 0; i < 5; i++) fluid.step(1/60, state.naesse);
+  presenter.render(fluid.dye.read, 1.0);
+  sag('nach blauem Klecks:       ' + lies() + '   (Blau erwartet)');
+
+  sag('GL-Fehler: ' + gl.getError());
+} catch (e) {
+  sag('AUSNAHME: ' + e.message);
+  sag((e.stack || '').split('\n').slice(0, 4).join('\n'));
+}
+document.getElementById('log').textContent = zeilen.join('\n');
+</script></body></html>
