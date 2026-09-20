@@ -189,6 +189,27 @@ export function createAudio(state) {
       });
     },
 
+    // Neues Abzeichen (#11): ein sanftes Zwei-Ton-Glöckchen — bewusst leiser und
+    // kürzer als levelAuf(), das sind hier ja nur Trophäen, kein echter Aufstieg.
+    abzeichen() {
+      const c = an();
+      if (!c) return;
+      const start = c.currentTime;
+      [880, 1174.66].forEach((frequenz, i) => {
+        const osz = c.createOscillator();
+        const gain = c.createGain();
+        osz.type = 'sine';
+        osz.frequency.setValueAtTime(frequenz, start);
+        const beginn = start + i * 0.1;
+        gain.gain.setValueAtTime(0.0001, beginn);
+        gain.gain.exponentialRampToValueAtTime(0.18, beginn + 0.015);
+        gain.gain.exponentialRampToValueAtTime(0.0001, beginn + 0.3);
+        osz.connect(gain).connect(master);
+        osz.start(beginn);
+        osz.stop(beginn + 0.35);
+      });
+    },
+
     schuetteln() {
       const c = an();
       if (!c) return;

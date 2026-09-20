@@ -23,6 +23,11 @@ export const state = {
   // migrieren.
   farbPunkteGesamt: 0,
 
+  // Volumenzähler mit Badges (#11): Wasser hat noch keinen eigenen Zähler — Farbe
+  // nutzt farbPunkteGesamt oben mit, da beide dieselbe Summe wären. Siehe
+  // src/abzeichen.js für die Stufen und die Umrechnung in ml.
+  wasserEinheitenGesamt: 0,
+
   // Werkzeug-Einstellungen, die sich freischalten lassen. Multiplikatoren auf die
   // Werkzeugkonstanten, 1 = heutiges (getuntes) Verhalten.
   werkzeugEinstellungen: {
@@ -51,6 +56,7 @@ export const state = {
           farbe: this.farbe,
           regenbogenAktiv: this.regenbogenAktiv,
           farbPunkteGesamt: this.farbPunkteGesamt,
+          wasserEinheitenGesamt: this.wasserEinheitenGesamt,
           werkzeugEinstellungen: this.werkzeugEinstellungen,
         })
       );

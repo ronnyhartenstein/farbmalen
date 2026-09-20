@@ -136,6 +136,12 @@ export function createRegler(state, aktionen) {
     </div>
 
     <button id="r-ton" class="knopf knopf-breit" type="button" aria-pressed="true">Ton</button>
+
+    <div class="regler-einstellung">
+      <p id="r-abzeichen-zeile" class="regler-abzeichen-zeile">Farbe 0 ml · Wasser 0 ml</p>
+      <button id="r-abzeichen" class="knopf knopf-breit" type="button">Abzeichen</button>
+    </div>
+
     <button id="r-neu" class="knopf knopf-breit" type="button">Neues Blatt</button>
     <button id="r-vollbild" class="knopf knopf-breit" type="button">Vollbild</button>
   `;
@@ -241,6 +247,7 @@ export function createRegler(state, aktionen) {
 
   box.querySelector('#r-abklatsch').addEventListener('click', () => aktionen.abklatsch?.());
   box.querySelector('#r-galerie').addEventListener('click', () => aktionen.galerie?.());
+  box.querySelector('#r-abzeichen').addEventListener('click', () => aktionen.abzeichen?.());
   box.querySelector('#r-neu').addEventListener('click', () => aktionen.neuesBlatt?.());
   box.querySelector('#r-vollbild').addEventListener('click', () => aktionen.vollbild?.());
 

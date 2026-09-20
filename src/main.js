@@ -15,6 +15,8 @@ import { createToolbar, createRegler } from './ui/toolbar.js';
 import { createPalette } from './ui/palette.js';
 import { createGalerie } from './ui/gallery.js';
 import { createFortschritt } from './ui/fortschritt.js';
+import { createAbzeichenUI } from './ui/abzeichen.js';
+import { FARBE_ABZEICHEN, WASSER_ABZEICHEN } from './abzeichen.js';
 import {
   levelVon,
   werkzeugeBisLevel,
@@ -98,6 +100,7 @@ function los(gl) {
     beiWechsel: () => audio.klick(),
     abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
     galerie: () => (galerie.offen ? galerie.schliessen() : galerie.oeffnen()),
+    abzeichen: () => (abzeichenUI.offen ? abzeichenUI.schliessen() : abzeichenUI.oeffnen()),
     neuesBlatt: () => {
       if (!confirm('Alles wegwischen und neu anfangen?')) return;
       fluid.neuesBlatt();
@@ -121,6 +124,8 @@ function los(gl) {
   for (const id of reglerBloeckeBisLevel(startLevel)) regler.zeigeBlock(id);
 
   const fortschritt = createFortschritt(state, { melde, blitzen, audio, toolbar, palette, regler });
+  // Braucht #r-abzeichen-zeile aus dem Reglerblock — deshalb erst nach createRegler().
+  const abzeichenUI = createAbzeichenUI(state, { melde, audio });
 
   // --- Tastatur ---
 
@@ -180,7 +185,7 @@ function los(gl) {
   if (debugAn) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
-    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, galerie, melde };
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, galerie, melde };
 
     // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
     // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
@@ -194,6 +199,28 @@ function los(gl) {
       b.title = stufe.titel;
       b.addEventListener('click', () => fortschritt.testeStufe(i + 1));
       stufenBox.appendChild(b);
+    });
+
+    // Ein Knopf pro Abzeichen (#11) — setzt den Zähler auf die jeweilige Schwelle,
+    // löst Toast/Ton/Anzeige wie im echten Spiel aus. Auch per Konsole:
+    // farbmalen.abzeichenUI.testeFarbe(0) / .testeWasser(0).
+    const abzeichenBox = document.getElementById('debug-abzeichen');
+    abzeichenBox.hidden = false;
+    FARBE_ABZEICHEN.forEach((a, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `F${i + 1}`;
+      b.title = a.titel;
+      b.addEventListener('click', () => abzeichenUI.testeFarbe(i));
+      abzeichenBox.appendChild(b);
+    });
+    WASSER_ABZEICHEN.forEach((a, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `W${i + 1}`;
+      b.title = a.titel;
+      b.addEventListener('click', () => abzeichenUI.testeWasser(i));
+      abzeichenBox.appendChild(b);
     });
   }
 
@@ -236,9 +263,10 @@ function los(gl) {
     werkzeug.tick?.(ctx, dt);
     if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
 
-    // Level & Freischaltungen (#12): direkt nach dem Werkzeug-Tick, damit Punkte aus
-    // diesem Bild sofort zählen.
+    // Level & Freischaltungen (#12) und Abzeichen (#11): direkt nach dem Werkzeug-
+    // Tick, damit Punkte aus diesem Bild sofort zählen.
     fortschritt.pruefeLevelaufstieg();
+    abzeichenUI.pruefeAbzeichen();
 
     fluid.step(dt, state.naesse);
     if (state.glitzer) glitzer.schritt(fluid.velocity, dt);

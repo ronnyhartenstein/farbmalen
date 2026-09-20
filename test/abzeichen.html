@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Abzeichen-Kalibrierung</title>
+<style>
+body { margin: 0; background: #111; color: #8f8; font: 13px/1.6 ui-monospace, monospace; padding: 16px; }
+h1 { color: #eee; font-size: 15px; }
+table { border-collapse: collapse; margin: 8px 0 20px; }
+td, th { padding: 3px 12px 3px 0; text-align: left; }
+.warnung { color: #f88; }
+</style>
+</head>
+<body>
+<h1>Wie lange dauert es bis zu jedem Abzeichen?</h1>
+<p>
+  Simuliert die gleiche „Gemischtes Spiel"-Spielweise wie
+  <code>test/fortschritt.html</code>, rechnet aber cumulierte aktive Spielzeit statt
+  Sekunden einer einzelnen Sitzung — die Abzeichen-Stufen aus
+  <code>src/abzeichen.js</code> sind bewusst viel höher als die Level-Schwellen und
+  sollen sich über mehrere Sitzungen erstrecken. Ziel: erstes Abzeichen je Zähler
+  fällt innerhalb einer normalen Sitzung (grob 5–15 aktive Minuten), die höheren
+  brauchen klar mehrere Sitzungen, ohne unrealistisch fern zu sein.
+</p>
+<div id="log">läuft …</div>
+<script type="module">
+import { FARBE_ABZEICHEN, WASSER_ABZEICHEN, ML_PRO_EINHEIT, einheitenZuMl, formatiereMl } from '../src/abzeichen.js';
+
+const log = document.getElementById('log');
+const zeilen = [];
+
+// Gleiche Konstanten wie test/fortschritt.html.
+const KONSTANTEN = {
+  giessenHalten: 1.1,       // NACHSCHUB_PRO_S in tools/giessen.js
+  pinselProSchritt: 0.4,    // MENGE_PRO_SCHRITT in tools/pinsel.js
+  wasserProS: 2.2,          // STAERKE_PRO_S in tools/wasser.js
+};
+
+// "Gemischtes Spiel": 20s-Zyklus mit Gießen, Pinseln, Pause/Wasser, wie in
+// test/fortschritt.html — hier zählt die Wasser-Phase aber tatsächlich fürs
+// Wasser-Abzeichen mit, nicht fürs Level.
+function farbProS(t) {
+  const phase = t % 20;
+  if (phase < 2) return KONSTANTEN.giessenHalten;
+  if (phase < 8) return KONSTANTEN.pinselProSchritt * 20;
+  if (phase < 14) return phase < 12 ? 0 : KONSTANTEN.giessenHalten;
+  return 0;
+}
+function wasserProS(t) {
+  const phase = t % 20;
+  return phase >= 8 && phase < 12 ? KONSTANTEN.wasserProS : 0; // in der Pausenphase Wasser
+}
+
+function simuliere(name, minuten, proS, abzeichenListe) {
+  const sekunden = minuten * 60;
+  const dt = 1;
+  let einheiten = 0;
+  const erreicht = [];
+  let naechster = 0;
+
+  for (let t = 0; t < sekunden; t += dt) {
+    einheiten += proS(t) * dt;
+    const ml = einheitenZuMl(einheiten);
+    while (naechster < abzeichenListe.length && ml >= abzeichenListe[naechster].ml) {
+      erreicht.push({ minuten: t / 60, titel: abzeichenListe[naechster].titel, ml: abzeichenListe[naechster].ml });
+      naechster++;
+    }
+  }
+
+  zeilen.push(`<h2 style="color:#eee;font-size:13px">${name}</h2>`);
+  if (erreicht.length === 0) {
+    zeilen.push(`<p class="warnung">Kein Abzeichen in ${minuten} aktiven Minuten erreicht — Kurve prüfen.</p>`);
+  } else {
+    zeilen.push('<table><tr><th>Abzeichen</th><th>nach aktiver Spielzeit</th><th>Schwelle</th></tr>');
+    for (const e of erreicht) {
+      const warnung = erreicht.indexOf(e) === 0 && e.minuten > 15 ? ' class="warnung"' : '';
+      zeilen.push(
+        `<tr${warnung}><td>${e.titel}</td><td>${e.minuten < 1 ? (e.minuten * 60).toFixed(0) + 's' : e.minuten.toFixed(1) + ' min'}</td><td>${formatiereMl(e.ml)}</td></tr>`
+      );
+    }
+    zeilen.push('</table>');
+  }
+}
+
+zeilen.push(`<p>1 Simulations-Einheit = ${ML_PRO_EINHEIT} ml.</p>`);
+simuliere('Farbe (Gemischtes Spiel, 6 aktive Stunden simuliert)', 360, farbProS, FARBE_ABZEICHEN);
+simuliere('Wasser (Gemischtes Spiel, 6 aktive Stunden simuliert)', 360, wasserProS, WASSER_ABZEICHEN);
+
+log.innerHTML = zeilen.join('\n');
+</script>
+</body>
+</html>
