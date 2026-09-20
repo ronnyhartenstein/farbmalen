@@ -9,7 +9,7 @@ import { createPresenter } from './render/present.js';
 import { createZeiger } from './input/pointer.js';
 import { createAudio } from './audio/sfx.js';
 import { state } from './state.js';
-import { PALETTE, hexZuPigment } from './palette.js';
+import { PALETTE, hexZuPigment, hslZuPigment } from './palette.js';
 import { WERKZEUGE, werkzeugNach, schuetteln } from './tools/index.js';
 import { createToolbar, createRegler } from './ui/toolbar.js';
 import { createPalette } from './ui/palette.js';
@@ -200,6 +200,12 @@ function los(gl) {
   let letzte = performance.now();
   let fpsGlatt = 60;
 
+  // Regenbogen-Modus (#15): dreht sich nur, solange tatsächlich geschüttet wird —
+  // ein voller Farbkreis dauert REGENBOGEN_SEKUNDEN Sekunden Dauermalen. Bewusst
+  // nicht in `state`: reine Laufzeit-Deko, muss nicht gespeichert werden.
+  const REGENBOGEN_SEKUNDEN = 10;
+  let regenbogenPhase = 0;
+
   function frame(jetzt) {
     const roh = (jetzt - letzte) / 1000;
     letzte = jetzt;
@@ -212,13 +218,16 @@ function los(gl) {
     eingabe.frameBeginn(dt);
 
     const werkzeug = werkzeugNach(state.werkzeug);
-    const ctx = {
-      pinsel,
-      zeiger,
-      state,
-      audio,
-      cmy: hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex),
-    };
+
+    let cmy;
+    if (state.regenbogenAktiv) {
+      if (zeiger.gedrueckt) regenbogenPhase = (regenbogenPhase + dt / REGENBOGEN_SEKUNDEN) % 1;
+      cmy = hslZuPigment(regenbogenPhase * 360, 0.85, 0.5);
+    } else {
+      cmy = hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex);
+    }
+
+    const ctx = { pinsel, zeiger, state, audio, cmy };
 
     if (zeiger.neuGedrueckt) {
       audio.aufwecken();

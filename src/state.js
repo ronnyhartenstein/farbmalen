@@ -10,6 +10,12 @@ export const state = {
   glitzer: false,
   ton: true,
 
+  // Regenbogen-Modus (#15): statt einer festen Palettenfarbe gleitet die Farbe beim
+  // Schütten langsam durch den Farbkreis. `farbe` bleibt dabei unverändert als
+  // "letzte echte Farbe", auf die zurückgefallen wird, sobald der Modus wieder
+  // ausgeschaltet wird.
+  regenbogenAktiv: false,
+
   // Level & Freischaltungen (#12): Lebenslange Summe aus verbrauchter Farbe
   // (nicht Wasser) — siehe src/sim/splat.js. Das Level selbst wird nie gespeichert,
   // sondern immer aus dieser Zahl über die Stufentabelle in src/fortschritt.js
@@ -43,6 +49,7 @@ export const state = {
           glitzer: this.glitzer,
           ton: this.ton,
           farbe: this.farbe,
+          regenbogenAktiv: this.regenbogenAktiv,
           farbPunkteGesamt: this.farbPunkteGesamt,
           werkzeugEinstellungen: this.werkzeugEinstellungen,
         })

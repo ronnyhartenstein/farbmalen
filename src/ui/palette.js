@@ -2,7 +2,12 @@
 //
 // Level & Freischaltungen (#12): Noch nicht freigeschaltete Farben existieren hier
 // schlicht nicht. `zeigeNeueFarbe()` hängt beim Freischalten einen neuen Klecks an.
-// Der Würfel würfelt nur unter den aktuell sichtbaren Farben.
+//
+// Regenbogen-Modus (#15): Der Würfel ist kein Einmal-Reroll mehr, sondern eine echte
+// Auswahl wie jede andere Farbe — ausgewählt bleibt er ausgewählt (dreht sichtbar
+// durch den Farbkreis), bis eine feste Farbe geklickt wird. Was der Modus konkret tut
+// (langsam durch den Farbkreis gleiten, solange geschüttet wird), steckt in
+// src/main.js — hier wird nur der An/Aus-Zustand verwaltet und angezeigt.
 
 import { PALETTE } from '../palette.js';
 
@@ -33,20 +38,13 @@ export function createPalette(state, aktionen, sichtbareIndizes) {
     bauKnopf(i);
   }
 
-  // Würfel: eine zufällige Farbe aus dem aktuell Sichtbaren, die nicht die aktuelle ist.
   const wuerfel = document.createElement('button');
   wuerfel.type = 'button';
-  wuerfel.className = 'klecks';
-  wuerfel.style.background =
-    'conic-gradient(#e8322a, #f7d32b, #54b83c, #16b8b8, #2f7fe0, #7c3fb5, #d6219a, #e8322a)';
-  wuerfel.title = 'Zufallsfarbe';
-  wuerfel.setAttribute('aria-label', 'Zufallsfarbe');
-  wuerfel.addEventListener('click', () => {
-    if (sichtbar.length < 2) return;
-    let i = state.farbe;
-    while (i === state.farbe) i = sichtbar[Math.floor(Math.random() * sichtbar.length)];
-    waehle(i);
-  });
+  wuerfel.className = 'klecks klecks-regenbogen';
+  wuerfel.title = 'Regenbogen — gleitet beim Schütten durch den Farbkreis';
+  wuerfel.setAttribute('aria-label', 'Regenbogen-Farbe');
+  wuerfel.setAttribute('aria-pressed', 'false');
+  wuerfel.addEventListener('click', waehleRegenbogen);
   box.appendChild(wuerfel);
 
   for (const i of sichtbareIndizes) fuegeHinzu(i);
@@ -55,16 +53,30 @@ export function createPalette(state, aktionen, sichtbareIndizes) {
   function waehle(i) {
     if (!knoepfe.has(i)) return; // nicht sichtbar/freigeschaltet → ignorieren
     state.farbe = i;
+    state.regenbogenAktiv = false;
     state.speichern();
     knoepfe.forEach((b, k) => b.setAttribute('aria-pressed', String(k === i)));
+    wuerfel.setAttribute('aria-pressed', 'false');
+    aktionen.beiWechsel?.();
+  }
+
+  function waehleRegenbogen() {
+    state.regenbogenAktiv = true;
+    state.speichern();
+    knoepfe.forEach((b) => b.setAttribute('aria-pressed', 'false'));
+    wuerfel.setAttribute('aria-pressed', 'true');
     aktionen.beiWechsel?.();
   }
 
   // Alter Spielstand kann auf eine noch nicht sichtbare Farbe zeigen (z. B. Gold
   // von vor #12) — dann auf die erste sichtbare zurückfallen, statt mit einem
   // Pigment zu starten, für das es gar keinen Button gibt.
-  const start = knoepfe.has(state.farbe) ? state.farbe : sichtbar[0];
-  waehle(start);
+  if (state.regenbogenAktiv) {
+    wuerfel.setAttribute('aria-pressed', 'true');
+  } else {
+    const start = knoepfe.has(state.farbe) ? state.farbe : sichtbar[0];
+    waehle(start);
+  }
 
   return { waehle, zeigeNeueFarbe: fuegeHinzu };
 }
