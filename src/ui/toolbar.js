@@ -136,7 +136,12 @@ export function createRegler(state, aktionen) {
     </div>
 
     <button id="r-ton" class="knopf knopf-breit" type="button" aria-pressed="true">Ton</button>
-    <button id="r-abzeichen" class="knopf knopf-breit" type="button">Abzeichen</button>
+
+    <div class="regler-einstellung">
+      <p id="r-abzeichen-zeile" class="regler-abzeichen-zeile">Farbe 0 ml · Wasser 0 ml</p>
+      <button id="r-abzeichen" class="knopf knopf-breit" type="button">Abzeichen</button>
+    </div>
+
     <button id="r-neu" class="knopf knopf-breit" type="button">Neues Blatt</button>
     <button id="r-vollbild" class="knopf knopf-breit" type="button">Vollbild</button>
   `;

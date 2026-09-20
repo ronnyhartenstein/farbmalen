@@ -1,10 +1,13 @@
 // Die Abzeichen-Übersicht (#11): zwei Spalten (Farbe/Wasser), je mit Gesamtmenge
 // und einer Liste aus erreichten und noch gesperrten Abzeichen. Reine Trophäen ohne
 // Spielauswirkung — anders als src/ui/fortschritt.js, das schaltet echt etwas frei.
+// Dazu eine kleine Dauer-Anzeige im Reglerblock, die immer (nicht erst im Overlay)
+// die aktuelle Gesamtmenge zeigt.
 
 import {
   FARBE_ABZEICHEN,
   WASSER_ABZEICHEN,
+  ML_PRO_EINHEIT,
   einheitenZuMl,
   anzahlErreicht,
   formatiereMl,
@@ -16,9 +19,11 @@ export function createAbzeichenUI(state, { melde, audio }) {
   const wasserGesamtEl = document.getElementById('abzeichen-wasser-gesamt');
   const farbeListeEl = document.getElementById('abzeichen-farbe-liste');
   const wasserListeEl = document.getElementById('abzeichen-wasser-liste');
+  const zeileEl = document.getElementById('r-abzeichen-zeile');
 
   let farbeErreicht = anzahlErreicht(einheitenZuMl(state.farbPunkteGesamt), FARBE_ABZEICHEN);
   let wasserErreicht = anzahlErreicht(einheitenZuMl(state.wasserEinheitenGesamt), WASSER_ABZEICHEN);
+  let letzteZeile = '';
 
   function baueListe(el, liste, ml) {
     el.innerHTML = '';
@@ -34,17 +39,26 @@ export function createAbzeichenUI(state, { melde, audio }) {
     }
   }
 
-  function aktualisieren() {
-    const mlFarbe = einheitenZuMl(state.farbPunkteGesamt);
-    const mlWasser = einheitenZuMl(state.wasserEinheitenGesamt);
+  function aktualisiereOverlay(mlFarbe, mlWasser) {
     farbeGesamtEl.textContent = formatiereMl(mlFarbe);
     wasserGesamtEl.textContent = formatiereMl(mlWasser);
     baueListe(farbeListeEl, FARBE_ABZEICHEN, mlFarbe);
     baueListe(wasserListeEl, WASSER_ABZEICHEN, mlWasser);
   }
 
+  // Läuft jedes Bild (billig: zwei Umrechnungen + ein textContent, nur bei
+  // tatsächlicher Änderung geschrieben) — die Zeile im Reglerblock soll live
+  // mitlaufen, nicht erst beim Öffnen des Overlays aktuell werden.
+  function aktualisiereZeile(mlFarbe, mlWasser) {
+    const zeile = `Farbe ${formatiereMl(mlFarbe)} · Wasser ${formatiereMl(mlWasser)}`;
+    if (zeile !== letzteZeile) {
+      zeileEl.textContent = zeile;
+      letzteZeile = zeile;
+    }
+  }
+
   function oeffnen() {
-    aktualisieren();
+    aktualisiereOverlay(einheitenZuMl(state.farbPunkteGesamt), einheitenZuMl(state.wasserEinheitenGesamt));
     overlay.hidden = false;
   }
 
@@ -60,8 +74,12 @@ export function createAbzeichenUI(state, { melde, audio }) {
   }
 
   function pruefeAbzeichen() {
-    const neueFarbe = anzahlErreicht(einheitenZuMl(state.farbPunkteGesamt), FARBE_ABZEICHEN);
-    const neuesWasser = anzahlErreicht(einheitenZuMl(state.wasserEinheitenGesamt), WASSER_ABZEICHEN);
+    const mlFarbe = einheitenZuMl(state.farbPunkteGesamt);
+    const mlWasser = einheitenZuMl(state.wasserEinheitenGesamt);
+    aktualisiereZeile(mlFarbe, mlWasser);
+
+    const neueFarbe = anzahlErreicht(mlFarbe, FARBE_ABZEICHEN);
+    const neuesWasser = anzahlErreicht(mlWasser, WASSER_ABZEICHEN);
     if (neueFarbe === farbeErreicht && neuesWasser === wasserErreicht) return;
 
     for (let i = farbeErreicht; i < neueFarbe; i++) melden(FARBE_ABZEICHEN[i].titel);
@@ -69,13 +87,33 @@ export function createAbzeichenUI(state, { melde, audio }) {
     farbeErreicht = neueFarbe;
     wasserErreicht = neuesWasser;
     state.speichern();
-    if (!overlay.hidden) aktualisieren();
+    if (!overlay.hidden) aktualisiereOverlay(mlFarbe, mlWasser);
   }
+
+  // Nur zum Testen (?debug=1): setzt den jeweiligen Zähler auf mindestens die
+  // Schwelle dieses Abzeichens und löst die normale Prüfung aus — Toast, Ton und
+  // Dauer-Anzeige laufen exakt wie im echten Spiel. Geht nur vorwärts, wie
+  // fortschritt.js' testeStufe().
+  function testeFarbe(index) {
+    const ziel = FARBE_ABZEICHEN[index].ml / ML_PRO_EINHEIT;
+    if (ziel > state.farbPunkteGesamt) state.farbPunkteGesamt = ziel;
+    pruefeAbzeichen();
+  }
+
+  function testeWasser(index) {
+    const ziel = WASSER_ABZEICHEN[index].ml / ML_PRO_EINHEIT;
+    if (ziel > state.wasserEinheitenGesamt) state.wasserEinheitenGesamt = ziel;
+    pruefeAbzeichen();
+  }
+
+  aktualisiereZeile(einheitenZuMl(state.farbPunkteGesamt), einheitenZuMl(state.wasserEinheitenGesamt));
 
   return {
     pruefeAbzeichen,
     oeffnen,
     schliessen,
+    testeFarbe,
+    testeWasser,
     get offen() { return !overlay.hidden; },
   };
 }

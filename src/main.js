@@ -16,6 +16,7 @@ import { createPalette } from './ui/palette.js';
 import { createGalerie } from './ui/gallery.js';
 import { createFortschritt } from './ui/fortschritt.js';
 import { createAbzeichenUI } from './ui/abzeichen.js';
+import { FARBE_ABZEICHEN, WASSER_ABZEICHEN } from './abzeichen.js';
 import {
   levelVon,
   werkzeugeBisLevel,
@@ -95,8 +96,6 @@ function los(gl) {
     setTimeout(() => { blitzEl.hidden = true; }, 340);
   }
 
-  const abzeichenUI = createAbzeichenUI(state, { melde, audio });
-
   const aktionen = {
     beiWechsel: () => audio.klick(),
     abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
@@ -125,6 +124,8 @@ function los(gl) {
   for (const id of reglerBloeckeBisLevel(startLevel)) regler.zeigeBlock(id);
 
   const fortschritt = createFortschritt(state, { melde, blitzen, audio, toolbar, palette, regler });
+  // Braucht #r-abzeichen-zeile aus dem Reglerblock — deshalb erst nach createRegler().
+  const abzeichenUI = createAbzeichenUI(state, { melde, audio });
 
   // --- Tastatur ---
 
@@ -198,6 +199,28 @@ function los(gl) {
       b.title = stufe.titel;
       b.addEventListener('click', () => fortschritt.testeStufe(i + 1));
       stufenBox.appendChild(b);
+    });
+
+    // Ein Knopf pro Abzeichen (#11) — setzt den Zähler auf die jeweilige Schwelle,
+    // löst Toast/Ton/Anzeige wie im echten Spiel aus. Auch per Konsole:
+    // farbmalen.abzeichenUI.testeFarbe(0) / .testeWasser(0).
+    const abzeichenBox = document.getElementById('debug-abzeichen');
+    abzeichenBox.hidden = false;
+    FARBE_ABZEICHEN.forEach((a, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `F${i + 1}`;
+      b.title = a.titel;
+      b.addEventListener('click', () => abzeichenUI.testeFarbe(i));
+      abzeichenBox.appendChild(b);
+    });
+    WASSER_ABZEICHEN.forEach((a, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `W${i + 1}`;
+      b.title = a.titel;
+      b.addEventListener('click', () => abzeichenUI.testeWasser(i));
+      abzeichenBox.appendChild(b);
     });
   }
 
