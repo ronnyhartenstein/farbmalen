@@ -63,6 +63,53 @@
     </div>
   </div>
 
+  <div id="tintenwaechter" class="tintenwaechter" hidden>
+    <div id="tw-start" class="tw-bildschirm">
+      <h2>Tintenwächter</h2>
+      <p>Böse Tinte quillt aus den Ecken. Halte sie mit Wasser und Schaber in Schach —
+         so lange du kannst.</p>
+      <p class="tw-bestzeit">Bestzeit: <span id="tw-bestzeit-start">0s</span></p>
+      <button id="tw-los" class="knopf levelup-knopf" type="button">Los geht's!</button>
+      <button id="tw-verlassen-start" class="knopf knopf-text" type="button">Zurück zum Malen</button>
+    </div>
+
+    <div id="tw-hud" class="tw-hud" hidden>
+      <div class="tw-anzeige">
+        <span id="tw-timer" class="tw-timer">0s</span>
+        <span id="tw-pegel" class="tw-pegel">Stufe 1</span>
+        <div class="tw-deckung">
+          <div id="tw-deckung-fuellung" class="tw-deckung-fuellung"></div>
+        </div>
+      </div>
+      <div class="tw-werkzeuge">
+        <button id="tw-wasser" class="werkzeug" type="button" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3.2c0 0 6.2 7.2 6.2 11.1a6.2 6.2 0 0 1-12.4 0C5.8 10.4 12 3.2 12 3.2z"/>
+            <path d="M9.2 14.8a2.8 2.8 0 0 0 2.8 2.8"/>
+          </svg>
+          <span>Wasser</span>
+        </button>
+        <button id="tw-schaber" class="werkzeug" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 15.5h11.5l4.5-9H8z"/><path d="M3.5 19.5h17"/>
+          </svg>
+          <span>Schaber</span>
+        </button>
+      </div>
+      <button id="tw-aufhoeren" class="knopf knopf-text tw-aufhoeren" type="button">Aufhören</button>
+    </div>
+
+    <div id="tw-ende" class="tw-bildschirm" hidden>
+      <h2>Untergegangen!</h2>
+      <p id="tw-ende-zeit">Du hast 0s überlebt.</p>
+      <p id="tw-ende-rekord" class="tw-ende-rekord" hidden>Neue Bestzeit! 🎉</p>
+      <button id="tw-nochmal" class="knopf levelup-knopf" type="button">Nochmal!</button>
+      <button id="tw-verlassen-ende" class="knopf knopf-text" type="button">Zurück zum Malen</button>
+    </div>
+  </div>
+
   <div id="galerie" class="galerie" hidden>
     <div class="galerie-kopf">
       <h2>Deine Abklatsche</h2>

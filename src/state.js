@@ -28,6 +28,10 @@ export const state = {
   // src/abzeichen.js für die Stufen und die Umrechnung in ml.
   wasserEinheitenGesamt: 0,
 
+  // Tintenwächter (#10): beste Überlebenszeit in Sekunden, eigener Arcade-Modus,
+  // losgelöst vom Level-System.
+  tintenwaechterBestzeit: 0,
+
   // Werkzeug-Einstellungen, die sich freischalten lassen. Multiplikatoren auf die
   // Werkzeugkonstanten, 1 = heutiges (getuntes) Verhalten.
   werkzeugEinstellungen: {
@@ -57,6 +61,7 @@ export const state = {
           regenbogenAktiv: this.regenbogenAktiv,
           farbPunkteGesamt: this.farbPunkteGesamt,
           wasserEinheitenGesamt: this.wasserEinheitenGesamt,
+          tintenwaechterBestzeit: this.tintenwaechterBestzeit,
           werkzeugEinstellungen: this.werkzeugEinstellungen,
         })
       );

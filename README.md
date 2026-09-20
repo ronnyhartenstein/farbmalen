@@ -111,6 +111,28 @@ Trophäen fürs Weiterspielen, mit eigenem Ton. Farbe und Wasser zählen unabhä
 und haben eigene Stufen; die erste fällt normalerweise innerhalb einer Sitzung, die
 höheren brauchen mehrere — kalibriert über `test/abzeichen.html`.
 
+## Tintenwächter
+
+Ein eigener Arcade-Modus, losgelöst vom Level-System: Knopf „Tintenwächter" im
+Reglerblock. Böse Tinte quillt aus festen Quellen und breitet sich aus, mit Wasser
+und Schaber muss die Fläche vor dem Überlaufen bewahrt werden — Timer läuft, ein
+Deckungsbalken zeigt, wie knapp es steht. Kein Permadeath, nur „Nochmal!", Ziel ist
+die beste Überlebenszeit (eigenes, dauerhaft gespeichertes Highscore-Feld).
+
+Technisch ein zweiter, unabhängiger Simulationslauf (`src/sim/fluid.js` ein zweites
+Mal instanziiert) auf demselben WebGL-Kontext — das freie Bild bleibt beim Ein- und
+Aussteigen unangetastet, die freie Simulation pausiert währenddessen einfach. Wasser
+und Schaber (`src/tools/wasser.js`, `src/tools/schaber.js`) werden dafür unverändert
+wiederverwendet. Die Flächenabdeckung wird nicht per `readPixels` auf dem vollen
+Dye-Bild gemessen (das würde die Pipeline abwürgen), sondern über einen kleinen
+Downsample-Pass (`src/sim/deckung.js`), der auf 24×18 Pixel mittelt, bevor gelesen
+wird.
+
+Schwierigkeit ist bewusst auf „echte Herausforderung" kalibriert: Verlieren ist ein
+reales, regelmäßiges Ergebnis, auch bei aktiver, beidhändiger Abwehr — kein Modus,
+der sich auf Dauer halten lässt. Nachschubtempo, Rampe und Verlustschwelle stehen in
+`src/tintenwaechter.js`, kalibriert über `test/tintenwaechter.html` (siehe unten).
+
 ## Aufbau
 
 ```
@@ -119,11 +141,13 @@ src/gl/               WebGL-Unterbau: Kontext, Shader, Renderziele
 src/sim/fluid.js      Der Simulationsschritt
 src/sim/splat.js      Einzige Stelle, an der Werkzeuge die Simulation berühren (inkl. Spiegelmodus)
 src/sim/glitter.js    Glitzerpartikel per Transform Feedback
+src/sim/deckung.js    Flächenabdeckung messen (Downsample-Pass für Tintenwächter)
 src/render/present.js Pigment → Licht, Papier, nasser Glanz
 src/tools/            Ein Werkzeug = eine Datei mit onDown/tick/onUp
 src/fortschritt.js    Stufentabelle: was ab welchem Level frei ist
 src/abzeichen.js      Mengen-Stufen für die Abzeichen-Trophäen
-src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken, Abzeichen
+src/tintenwaechter.js Quellen, Schwierigkeitskurve, Schwellen für den Arcade-Modus
+src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken, Abzeichen, Tintenwächter
 src/audio/sfx.js      Töne, komplett synthetisch (keine Audio-Dateien)
 test/                 Prüfseiten, siehe unten
 ```
@@ -146,6 +170,7 @@ Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der
 | `test/diagnose.html` | Ob dieser Browser alles kann, was die Simulation braucht — erste Anlaufstelle, wenn es irgendwo schwarz bleibt |
 | `test/fortschritt.html` | Nach wie vielen Sekunden welches Level fällt, für verschiedene Spielweisen — Grundlage der Stufentabelle |
 | `test/abzeichen.html` | Nach wie viel aktiver Spielzeit welches Abzeichen fällt — Grundlage der Mengen-Stufen |
+| `test/tintenwaechter.html` | Wie lange verschiedene Abwehr-Fertigkeitsstufen im Tintenwächter durchhalten — Grundlage der Schwierigkeitskurve |
 
 Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
 so laufen sie auch in einem headless gestarteten Browser durch.

@@ -603,6 +603,116 @@ input[type="range"] {
 .hinweis h1 { margin: 0; font-size: 46px; }
 .hinweis p { margin: 0; max-width: 34em; font-size: 18px; line-height: 1.6; opacity: 0.85; }
 
+/* --- Tintenwächter (#10) --- */
+
+.tintenwaechter {
+  position: fixed;
+  inset: 0;
+  z-index: 15; /* unter Toast/Popups, über der Wanne */
+  pointer-events: none; /* die Wanne bleibt bedienbar, nur die Kind-Elemente fangen Klicks */
+}
+
+.tw-bildschirm {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  background: rgba(20, 14, 20, 0.88);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: levelup-auftauchen 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.tw-bildschirm h2 { margin: 0; font-size: 32px; color: var(--aktiv); }
+.tw-bildschirm p { margin: 0; max-width: 32em; font-size: 16px; line-height: 1.5; opacity: 0.9; }
+.tw-bestzeit { font-weight: 700; opacity: 1 !important; }
+.tw-ende-rekord { color: var(--aktiv); font-weight: 800; font-size: 18px; }
+
+/* --- HUD: soll die Sicht aufs Spielfeld möglichst wenig verstellen --- */
+
+.tw-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tw-anzeige {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(20, 14, 20, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.tw-timer {
+  font: 800 20px/1 inherit;
+  color: var(--schrift);
+  min-width: 2.5em;
+}
+
+.tw-pegel {
+  font: 700 13px/1 inherit;
+  color: var(--schrift);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+
+.tw-deckung {
+  width: 160px;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.tw-deckung-fuellung {
+  height: 100%;
+  width: 0%;
+  background: #4caf6a;
+  transition: width 0.2s ease, background 0.3s ease;
+}
+
+.tw-deckung-fuellung.tw-warnung { background: #e0b83c; }
+.tw-deckung-fuellung.tw-gefahr { background: #e0483c; animation: tw-puls 0.6s ease-in-out infinite; }
+
+@keyframes tw-puls {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+.tw-werkzeuge {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(20, 14, 20, 0.7);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.tw-aufhoeren {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  pointer-events: auto;
+}
+
 @media (max-width: 900px) {
   .regler { width: 158px; padding: 11px; }
   .werkzeug { width: 56px; }

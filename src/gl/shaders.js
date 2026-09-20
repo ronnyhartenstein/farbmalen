@@ -372,3 +372,42 @@ void main() {
   float a = clamp(kern + strahl * 0.5, 0.0, 1.0) * vFunkeln;
   fragColor = vec4(vec3(1.0, 0.96, 0.82) * a, a);
 }`;
+
+// Tintenwächter (#10): Flächenabdeckung messen, ohne die Pipeline abzuwürgen. Statt
+// das volle Dye-Bild zu lesen, wird hier klein gerendert (winziges Renderziel, siehe
+// src/sim/deckung.js) — jeder Ausgabetexel mittelt ein RASTER×RASTER-Raster aus der
+// Dye-Dicke (Alpha) seiner Zielfläche zu einem 0/1-Anteil "mit Tinte bedeckt".
+export const deckungsShader = kopf + `
+uniform sampler2D uDye;
+uniform vec2 uTexel;
+uniform float uSchwelle;
+void main() {
+  const int RASTER = 4;
+  float summe = 0.0;
+  for (int y = 0; y < RASTER; y++) {
+    for (int x = 0; x < RASTER; x++) {
+      vec2 versatz = (vec2(float(x), float(y)) + 0.5) / float(RASTER) - 0.5;
+      float dicke = texture(uDye, vUv + versatz * uTexel).a;
+      summe += dicke > uSchwelle ? 1.0 : 0.0;
+    }
+  }
+  float anteil = summe / float(RASTER * RASTER);
+  fragColor = vec4(anteil, anteil, anteil, 1.0);
+}`;
+
+// Randabfluss (Tintenwächter, #10): Die freien Wände oben (advectionShader-Kommentar
+// "an den Rändern spiegeln, damit die Farbe in der Wanne bleibt") halten in der freien
+// Maltoy zu Recht jede Farbe fest — Schaber verschiebt Tinte dadurch aber nur, statt sie
+// je verschwinden zu lassen. Damit "wegschieben" hier eine echte Wirkung hat, rinnt
+// Tinte, die nah genug an den Rand gedrängt wurde, dort ab: derselbe Verdünnungstrick
+// wie im Wasser-Shader (ganzer Vektor multipliziert, nicht nur die Dicke), aber über
+// einen schmalen Randstreifen statt eines Punkts.
+export const abflussShader = kopf + `
+uniform sampler2D uTarget;
+uniform float uRandbreite;
+uniform float uStaerke;
+void main() {
+  vec2 d = min(vUv, 1.0 - vUv);
+  float naehe = 1.0 - smoothstep(0.0, uRandbreite, min(d.x, d.y));
+  fragColor = texture(uTarget, vUv) * (1.0 - naehe * uStaerke);
+}`;
