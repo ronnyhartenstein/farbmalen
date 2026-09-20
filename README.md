@@ -75,6 +75,10 @@ Und `1 cm` ist wörtlich gemeint: Ein verstecktes `<div style="width:1cm">` wird
 ausgemessen, alle Werkzeuggrößen sind in Zentimetern definiert. Mit dem Lineal am
 Bildschirm nachprüfbar.
 
+Der letzte Klecks in der Palette ist kein Einmal-Würfel, sondern eine echte Auswahl:
+ausgewählt gleitet die Farbe beim Schütten langsam durch den Farbkreis (ein voller
+Umlauf dauert 10 Sekunden Dauermalen) statt einer festen Farbe zu folgen.
+
 ## Level & Freischaltungen
 
 Gestartet wird mit Gießen, Pinsel, Wasser und fünf Grundfarben — genug für den

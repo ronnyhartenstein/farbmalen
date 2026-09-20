@@ -32,8 +32,31 @@ export function hexZuRgb(hex) {
 // (Mit "1 - rgb" wurde daraus Braun, weil die Farbtöne mit der Menge wegdrifteten.)
 const DUNKELGRENZE = 0.035; // sonst wäre Schwarz unendlich dicht
 
+export function rgbZuPigment(rgb) {
+  return rgb.map((k) => -Math.log(Math.max(k, DUNKELGRENZE)));
+}
+
 export function hexZuPigment(hex) {
-  return hexZuRgb(hex).map((k) => -Math.log(Math.max(k, DUNKELGRENZE)));
+  return rgbZuPigment(hexZuRgb(hex));
+}
+
+// Für den Regenbogen-Modus (#15): h in Grad [0, 360), s/l in [0, 1].
+export function hslZuRgb(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hh = ((h % 360) + 360) % 360 / 60;
+  const x = c * (1 - Math.abs((hh % 2) - 1));
+  const [r, g, b] =
+    hh < 1 ? [c, x, 0] :
+    hh < 2 ? [x, c, 0] :
+    hh < 3 ? [0, c, x] :
+    hh < 4 ? [0, x, c] :
+    hh < 5 ? [x, 0, c] : [c, 0, x];
+  const m = l - c / 2;
+  return [r + m, g + m, b + m];
+}
+
+export function hslZuPigment(h, s, l) {
+  return rgbZuPigment(hslZuRgb(h, s, l));
 }
 
 export function aktuelleFarbe(state) {

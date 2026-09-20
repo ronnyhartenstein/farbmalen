@@ -239,6 +239,21 @@ input[type="range"] {
               inset 0 -4px 7px rgba(0, 0, 0, 0.28);
 }
 
+/* Regenbogen-Modus (#15): der Würfel selbst dreht sich sichtbar, solange er
+   ausgewählt ist — die Simulation gleitet parallel dazu durch den Farbkreis. */
+.klecks-regenbogen {
+  background: conic-gradient(#e8322a, #f7d32b, #54b83c, #16b8b8, #2f7fe0, #7c3fb5, #d6219a, #e8322a);
+}
+
+.klecks-regenbogen[aria-pressed="true"] {
+  animation: regenbogen-dreh 3.5s linear infinite;
+}
+
+@keyframes regenbogen-dreh {
+  from { transform: scale(1.3) rotate(0deg); }
+  to   { transform: scale(1.3) rotate(360deg); }
+}
+
 /* --- Levelaufstieg (#12) --- */
 
 .levelup {
