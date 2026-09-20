@@ -35,6 +35,8 @@ const KONSTANTEN = {
   giessenHalten: 1.1, // NACHSCHUB_PRO_S
   pinselProSchritt: 0.4, // MENGE_PRO_SCHRITT in tools/pinsel.js
   pinselStandProS: 1.4, // STAND_MENGE_PRO_S
+  pinselZaehlgewicht: 0.045, // ZAEHLGEWICHT (#18) — visuelle Menge bleibt unverändert,
+                             // nur das Hochzählen ist gedrosselt, siehe tools/pinsel.js
 };
 
 function simuliere(name, sekunden, punktProS) {
@@ -78,14 +80,18 @@ simuliere('Nur Gießen (Klick + 2s halten, alle 3s neu)', 180, (t) => {
 });
 
 // B) Aktives Pinsel-Ziehen, durchgehend (typisch für ein Kind, das begeistert malt).
-simuliere('Durchgehend Pinsel ziehen', 60, () => KONSTANTEN.pinselProSchritt * 60);
+simuliere('Durchgehend Pinsel ziehen', 60, () => KONSTANTEN.pinselProSchritt * 60 * KONSTANTEN.pinselZaehlgewicht);
+
+// B2) Pinsel im Extremtempo: MAX_SCHRITTE (8) jedes Bild ausgeschöpft — die schnellste
+// Art zu ziehen, die es überhaupt gibt.
+simuliere('Pinsel im Extremtempo (8 Schritte/Bild)', 60, () => KONSTANTEN.pinselProSchritt * 8 * 60 * KONSTANTEN.pinselZaehlgewicht);
 
 // C) Gemischtes Spiel: abwechselnd Gießen, Pinsel-Ziehen, Pausen, etwas Wasser
 // (zählt nicht mit) — realistischste Annahme für ein typisches Spielverhalten.
 simuliere('Gemischtes Spiel (Gießen/Pinsel/Pausen/Wasser)', 300, (t) => {
   const phase = t % 20;
   if (phase < 2) return KONSTANTEN.giessenHalten; // gießen
-  if (phase < 8) return KONSTANTEN.pinselProSchritt * 20; // gemächlich pinseln
+  if (phase < 8) return KONSTANTEN.pinselProSchritt * 20 * KONSTANTEN.pinselZaehlgewicht; // gemächlich pinseln
   if (phase < 12) return 0; // Wasser oder Pause — zählt nicht
   if (phase < 14) return KONSTANTEN.giessenHalten;
   return 0;

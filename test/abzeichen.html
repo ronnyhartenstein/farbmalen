@@ -33,6 +33,7 @@ const zeilen = [];
 const KONSTANTEN = {
   giessenHalten: 1.1,       // NACHSCHUB_PRO_S in tools/giessen.js
   pinselProSchritt: 0.4,    // MENGE_PRO_SCHRITT in tools/pinsel.js
+  pinselZaehlgewicht: 0.045, // ZAEHLGEWICHT (#18), siehe test/fortschritt.html
   wasserProS: 2.2,          // STAERKE_PRO_S in tools/wasser.js
 };
 
@@ -42,7 +43,7 @@ const KONSTANTEN = {
 function farbProS(t) {
   const phase = t % 20;
   if (phase < 2) return KONSTANTEN.giessenHalten;
-  if (phase < 8) return KONSTANTEN.pinselProSchritt * 20;
+  if (phase < 8) return KONSTANTEN.pinselProSchritt * 20 * KONSTANTEN.pinselZaehlgewicht;
   if (phase < 14) return phase < 12 ? 0 : KONSTANTEN.giessenHalten;
   return 0;
 }
