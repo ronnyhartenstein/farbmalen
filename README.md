@@ -83,9 +83,11 @@ rechts (Nässe, Papier auflegen + Galerie, Spiegel, Glitzer — in dieser Reihen
 später einstellbare Werkzeug-Parameter (Pinsel-Dicke, Rührer-Tempo).
 
 Noch nicht Freigeschaltetes ist komplett unsichtbar — kein Ausgrauen, kein
-Schloss-Symbol. Es taucht beim Freischalten live in der Werkzeugleiste, Palette oder
-im Reglerblock auf, mit Toast, Bildschirmblitz und einem aufsteigenden Ton. Der
-Fortschrittsbalken über der Farbpalette zeigt das aktuelle Level.
+Schloss-Symbol. Bei jedem Levelaufstieg erscheint erst ein Popup (was ist neu, kurzer
+Erklärtext, Farbkleckse) mit einem großen „Wohoo!"/„Yeah!"/„Klasse!"-Knopf; erst mit
+dem Klick poppt der neue Button live in Werkzeugleiste, Palette oder Reglerblock auf,
+dazu Toast, Bildschirmblitz und ein aufsteigender Ton. Der Fortschrittsbalken über der
+Farbpalette zeigt das aktuelle Level.
 
 Die Stufentabelle steht in `src/fortschritt.js`, gemessen statt geraten: Erste Stufe
 soll nach wenigen Sekunden fallen, nicht nach vielen Minuten — kalibriert über

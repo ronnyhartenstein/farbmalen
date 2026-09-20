@@ -27,14 +27,43 @@ export const STARTFARBEN = [0, 2, 6, 12, 5];
 // werden (Ton, Neues Blatt und Vollbild bleiben dagegen immer da — reine
 // Bedienelemente, kein Spielinhalt). Auf die ersten vier Werkzeug-Stufen verteilt,
 // damit alles Inhaltliche innerhalb weniger Minuten frei ist.
+// text: kurzer Erklärsatz fürs Levelaufstieg-Popup (was ist neu, wofür ist es gut).
 export const STUFEN = [
-  { punkte: 30, werkzeug: 'rechen', farben: [1, 3], reglerBloecke: ['r-block-naesse'], titel: 'Rechen' },
-  { punkte: 60, werkzeug: 'ruehrer', farben: [8, 9], reglerBloecke: ['r-block-abklatsch'], titel: 'Rührer' },
-  { punkte: 100, werkzeug: 'schaber', farben: [10, 7], reglerBloecke: ['r-block-spiegel'], titel: 'Schaber' },
-  { punkte: 150, werkzeug: 'pusten', farben: [4, 11], reglerBloecke: ['r-glitzer'], titel: 'Pusten' },
-  { punkte: 220, werkzeug: 'seife', farben: [13], titel: 'Seife & Gold' },
-  { punkte: 320, einstellung: 'pinselDicke', titel: 'Pinsel-Dicke einstellbar' },
-  { punkte: 460, einstellung: 'ruehrerTempo', titel: 'Rührer-Tempo einstellbar' },
+  {
+    punkte: 30, werkzeug: 'rechen', farben: [1, 3], reglerBloecke: ['r-block-naesse'],
+    titel: 'Rechen',
+    text: 'Zieh den Rechen quer durch die Farben — das ergibt echtes Marmormuster. Und die Nässe lässt sich jetzt einstellen.',
+  },
+  {
+    punkte: 60, werkzeug: 'ruehrer', farben: [8, 9], reglerBloecke: ['r-block-abklatsch'],
+    titel: 'Rührer',
+    text: 'Der Rührer dreht Farben spiralig ineinander. Und du kannst jetzt Papier auflegen, um dein Bild in der Galerie zu sammeln.',
+  },
+  {
+    punkte: 100, werkzeug: 'schaber', farben: [10, 7], reglerBloecke: ['r-block-spiegel'],
+    titel: 'Schaber',
+    text: 'Der Schaber schiebt Farbe zur Seite, ohne neue aufzutragen. Und der Spiegel macht aus jedem Strich ein Mandala.',
+  },
+  {
+    punkte: 150, werkzeug: 'pusten', farben: [4, 11], reglerBloecke: ['r-glitzer'],
+    titel: 'Pusten',
+    text: 'Pusten bläst die Farbe nach außen, wie durch einen Strohhalm. Und Glitzer schwimmt jetzt mit der Strömung.',
+  },
+  {
+    punkte: 220, werkzeug: 'seife', farben: [13],
+    titel: 'Seife & Gold',
+    text: 'Ein Klick mit der Seife, und die Farbe flieht schlagartig! Dazu gibt es jetzt Gold in der Palette.',
+  },
+  {
+    punkte: 320, einstellung: 'pinselDicke',
+    titel: 'Pinsel-Dicke einstellbar',
+    text: 'Du kannst jetzt einstellen, wie dick der Pinsel malt.',
+  },
+  {
+    punkte: 460, einstellung: 'ruehrerTempo',
+    titel: 'Rührer-Tempo einstellbar',
+    text: 'Du kannst jetzt einstellen, wie schnell der Rührer dreht.',
+  },
 ];
 
 // Anzeige-/Freischaltreihenfolge der Werkzeuge — bestimmt auch die Zifferntasten
