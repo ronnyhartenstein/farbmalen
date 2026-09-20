@@ -81,41 +81,94 @@ export function createRegler(state, aktionen) {
   // Einstellungen weiter unten — `zeigeBlock()`/`zeigeEinstellung()` heben es beim
   // Freischalten auf. Ton, Neues Blatt und Vollbild sind reine Bedienelemente und
   // bleiben immer da, sonst könnte ein Kind nicht mal eben den Ton abstellen oder
-  // ein misslungenes Bild wegwischen.
+  // ein misslungenes Bild wegwischen — deshalb auch ohne Info-Knopf, selbsterklärend.
+  //
+  // Jeder Inhalts-Regler bekommt ein kleines "i" mit `data-info`-Erklärtext,
+  // aufklappbar per infoPopover() weiter unten.
   box.innerHTML = `
     <div id="r-block-spiegel" class="regler-einstellung" hidden>
-      <p class="regler-titel">Spiegel</p>
+      <p class="regler-titel">Spiegel
+        <button class="info-knopf" type="button" aria-label="Was macht Spiegel?"
+          data-info="Spiegelt jeden Strich mehrfach um die Mitte — aus jedem Klecks wird ein Muster wie im Kaleidoskop.">i</button>
+      </p>
       <div class="knopfreihe" id="r-spiegel"></div>
     </div>
 
     <div id="r-block-naesse" class="regler-einstellung" hidden>
-      <p class="regler-titel">Nässe</p>
+      <p class="regler-titel">Nässe
+        <button class="info-knopf" type="button" aria-label="Was macht Nässe?"
+          data-info="Wie nass die Farbe ist: rechts läuft sie schneller ineinander, links bleibt sie länger so, wie sie ist.">i</button>
+      </p>
       <input id="r-naesse" type="range" min="0" max="100" step="1" aria-label="Nässe">
     </div>
 
-    <div id="r-einstellung-pinselDicke" class="regler-einstellung" hidden>
-      <p class="regler-titel">Pinsel-Dicke</p>
-      <input id="r-pinselDicke" type="range" min="40" max="220" step="5" aria-label="Pinsel-Dicke">
-    </div>
-
-    <div id="r-einstellung-ruehrerTempo" class="regler-einstellung" hidden>
-      <p class="regler-titel">Rührer-Tempo</p>
-      <input id="r-ruehrerTempo" type="range" min="40" max="220" step="5" aria-label="Rührer-Tempo">
-    </div>
-
-    <div class="knopfreihe">
-      <button id="r-ton" class="knopf" type="button" aria-pressed="true">Ton</button>
-      <button id="r-glitzer" class="knopf" type="button" aria-pressed="false" hidden>Glitzer</button>
+    <div id="r-block-glitzer" class="regler-einstellung" hidden>
+      <p class="regler-titel">Glitzer
+        <button class="info-knopf" type="button" aria-label="Was macht Glitzer?"
+          data-info="Streut glitzernde Punkte in die Farbe, die mit der Strömung mitschwimmen.">i</button>
+      </p>
+      <button id="r-glitzer" class="knopf knopf-breit" type="button" aria-pressed="false">An/Aus</button>
     </div>
 
     <div id="r-block-abklatsch" class="regler-einstellung" hidden>
+      <p class="regler-titel">Abklatsch
+        <button class="info-knopf" type="button" aria-label="Was macht Papier auflegen?"
+          data-info="„Papier auflegen” hält dein Bild fest und legt es in die Galerie — dort kannst du es dir später wieder ansehen.">i</button>
+      </p>
       <button id="r-abklatsch" class="knopf knopf-breit" type="button">Papier auflegen</button>
       <button id="r-galerie" class="knopf knopf-breit" type="button">Galerie</button>
     </div>
 
+    <div id="r-einstellung-pinselDicke" class="regler-einstellung" hidden>
+      <p class="regler-titel">Pinsel-Dicke
+        <button class="info-knopf" type="button" aria-label="Was macht Pinsel-Dicke?"
+          data-info="Wie breit der Pinsel malt.">i</button>
+      </p>
+      <input id="r-pinselDicke" type="range" min="40" max="220" step="5" aria-label="Pinsel-Dicke">
+    </div>
+
+    <div id="r-einstellung-ruehrerTempo" class="regler-einstellung" hidden>
+      <p class="regler-titel">Rührer-Tempo
+        <button class="info-knopf" type="button" aria-label="Was macht Rührer-Tempo?"
+          data-info="Wie schnell sich der Rührer dreht.">i</button>
+      </p>
+      <input id="r-ruehrerTempo" type="range" min="40" max="220" step="5" aria-label="Rührer-Tempo">
+    </div>
+
+    <button id="r-ton" class="knopf knopf-breit" type="button" aria-pressed="true">Ton</button>
     <button id="r-neu" class="knopf knopf-breit" type="button">Neues Blatt</button>
     <button id="r-vollbild" class="knopf knopf-breit" type="button">Vollbild</button>
   `;
+
+  // --- Info-Popover: ein "i" zeigt eine kurze Erklärung, Klick woanders schließt sie. ---
+  const infoPopover = document.getElementById('info-popover');
+  let offenerInfoKnopf = null;
+
+  function zeigeInfo(knopf) {
+    infoPopover.textContent = knopf.dataset.info;
+    infoPopover.hidden = false;
+    const r = knopf.getBoundingClientRect();
+    const breite = 220;
+    const links = Math.min(Math.max(12, r.left), window.innerWidth - breite - 12);
+    infoPopover.style.left = `${links}px`;
+    infoPopover.style.top = `${r.bottom + 8}px`;
+    offenerInfoKnopf = knopf;
+  }
+
+  function versteckeInfo() {
+    infoPopover.hidden = true;
+    offenerInfoKnopf = null;
+  }
+
+  box.addEventListener('click', (ev) => {
+    const knopf = ev.target.closest('.info-knopf');
+    if (!knopf) return;
+    ev.stopPropagation();
+    if (offenerInfoKnopf === knopf) versteckeInfo();
+    else zeigeInfo(knopf);
+  });
+  document.addEventListener('click', versteckeInfo);
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') versteckeInfo(); });
 
   const spiegelBox = box.querySelector('#r-spiegel');
   const spiegelKnoepfe = SPIEGELSTUFEN.map((n) => {

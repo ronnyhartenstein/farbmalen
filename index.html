@@ -30,7 +30,11 @@
 
   <div id="levelup" class="levelup" hidden>
     <div class="levelup-karte">
-      <p class="levelup-ueberschrift">Level <span id="levelup-level"></span>!</p>
+      <p class="levelup-ueberschrift">
+        <span class="levelup-vor">Level</span>
+        <span class="levelup-zahl" id="levelup-level"></span>
+        <span class="levelup-vor">!</span>
+      </p>
       <div id="levelup-werkzeug" class="levelup-werkzeug" hidden>
         <svg id="levelup-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
              stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
@@ -56,7 +60,10 @@
     <p id="hinweis-text"></p>
   </div>
 
+  <div id="info-popover" class="info-popover" hidden></div>
+
   <div id="debug" class="debug" hidden></div>
+  <div id="debug-stufen" class="debug-stufen" hidden></div>
 
   <script type="module" src="src/main.js"></script>
 </body>

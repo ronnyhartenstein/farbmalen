@@ -21,6 +21,7 @@ import {
   farbenBisLevel,
   einstellungenBisLevel,
   reglerBloeckeBisLevel,
+  STUFEN,
 } from './fortschritt.js';
 
 state.laden();
@@ -180,6 +181,19 @@ function los(gl) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
     window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, galerie, melde };
+
+    // Ein Knopf pro Stufe, um deren Levelaufstieg-Popup anzusehen, ohne dafür
+    // wirklich zu malen — auch per Konsole: farbmalen.fortschritt.vorschauStufe(3).
+    const stufenBox = document.getElementById('debug-stufen');
+    stufenBox.hidden = false;
+    STUFEN.forEach((stufe, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `Vorschau L${i + 1}`;
+      b.title = stufe.titel;
+      b.addEventListener('click', () => fortschritt.vorschauStufe(i + 1));
+      stufenBox.appendChild(b);
+    });
   }
 
   let letzte = performance.now();

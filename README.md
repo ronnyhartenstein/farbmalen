@@ -18,7 +18,9 @@ docker compose up -d      # → http://localhost:8080
 python3 -m http.server 8080
 ```
 
-Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen.
+Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen, dazu ein
+Knopf pro Level, der dessen Aufstiegs-Popup zeigt, ohne dafür wirklich malen zu
+müssen (auch per Konsole: `farbmalen.fortschritt.vorschauStufe(3)`).
 
 ## Bedienung
 
@@ -83,11 +85,12 @@ rechts (Nässe, Papier auflegen + Galerie, Spiegel, Glitzer — in dieser Reihen
 später einstellbare Werkzeug-Parameter (Pinsel-Dicke, Rührer-Tempo).
 
 Noch nicht Freigeschaltetes ist komplett unsichtbar — kein Ausgrauen, kein
-Schloss-Symbol. Bei jedem Levelaufstieg erscheint erst ein Popup (was ist neu, kurzer
-Erklärtext, Farbkleckse) mit einem großen „Wohoo!"/„Yeah!"/„Klasse!"-Knopf; erst mit
-dem Klick poppt der neue Button live in Werkzeugleiste, Palette oder Reglerblock auf,
-dazu Toast, Bildschirmblitz und ein aufsteigender Ton. Der Fortschrittsbalken über der
-Farbpalette zeigt das aktuelle Level.
+Schloss-Symbol. Bei jedem Levelaufstieg erscheint erst ein Popup (große, leicht
+tanzende Levelzahl, was ist neu, kurzer Erklärtext, Farbkleckse), begleitet von
+Bildschirmblitz und Tada-Ton. Erst mit dem Klick auf „Wohoo!"/„Yeah!"/„Klasse!"
+poppt der neue Button live in Werkzeugleiste, Palette oder Reglerblock auf. Der
+Fortschrittsbalken über der Farbpalette zeigt das aktuelle Level. Jeder freigeschaltete
+Regler hat ein kleines „i" mit einer kurzen Erklärung, was er tut.
 
 Die Stufentabelle steht in `src/fortschritt.js`, gemessen statt geraten: Erste Stufe
 soll nach wenigen Sekunden fallen, nicht nach vielen Minuten — kalibriert über

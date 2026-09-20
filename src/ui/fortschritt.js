@@ -80,14 +80,18 @@ export function createFortschritt(state, { melde, blitzen, audio, toolbar, palet
 
     popupKnopf.textContent = KLICK_WOERTER[Math.floor(Math.random() * KLICK_WOERTER.length)];
     popup.hidden = false;
+
+    // Der Tada-Moment ist das Erscheinen, nicht das Bestätigen — der Klick
+    // danach ist nur noch eine ruhige, leise Zustimmung.
+    blitzen();
+    audio?.levelAuf();
   }
 
   popupKnopf.addEventListener('click', () => {
     const eintrag = warteschlange.shift();
     if (eintrag) {
       freischalten(eintrag.stufe);
-      blitzen();
-      audio?.levelAuf();
+      audio?.klick();
       melde(`Level ${eintrag.level}! ${eintrag.stufe.titel} freigeschaltet`);
       state.speichern();
     }
@@ -115,8 +119,16 @@ export function createFortschritt(state, { melde, blitzen, audio, toolbar, palet
     anzeigen(level, state.farbPunkteGesamt);
   }
 
+  // Nur zum Testen (?debug=1): zeigt das Popup einer Stufe direkt an, ohne
+  // Warteschlange, ohne echte Punkte/Freischaltungen zu verändern. Ein Klick auf
+  // den Knopf schließt es dann einfach wieder (die Warteschlange ist ja leer).
+  function vorschauStufe(level) {
+    const stufe = stufeVon(level);
+    if (stufe) zeigePopup(level, stufe);
+  }
+
   anzeigen(letztesLevel, state.farbPunkteGesamt);
   box.hidden = false;
 
-  return { pruefeLevelaufstieg };
+  return { pruefeLevelaufstieg, vorschauStufe };
 }

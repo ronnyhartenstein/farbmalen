@@ -45,7 +45,7 @@ export const STUFEN = [
     text: 'Der Schaber schiebt Farbe zur Seite, ohne neue aufzutragen. Und der Spiegel macht aus jedem Strich ein Mandala.',
   },
   {
-    punkte: 150, werkzeug: 'pusten', farben: [4, 11], reglerBloecke: ['r-glitzer'],
+    punkte: 150, werkzeug: 'pusten', farben: [4, 11], reglerBloecke: ['r-block-glitzer'],
     titel: 'Pusten',
     text: 'Pusten bläst die Farbe nach außen, wie durch einen Strohhalm. Und Glitzer schwimmt jetzt mit der Strömung.',
   },
