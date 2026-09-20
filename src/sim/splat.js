@@ -47,11 +47,17 @@ export function createPinsel(fluid, state) {
 
   return {
     // Farbe auftragen. radius in cm, amount = Pigmentmenge.
+    //
+    // Zählt nebenbei für die Level-Freischaltungen (#12) mit — diese Funktion ist die
+    // einzige Stelle, an der Werkzeuge Farbe auftragen, also erfasst das automatisch
+    // alle acht Werkzeuge. wasser() unten bleibt bewusst unangetastet: Wasser zählt
+    // nicht zum Fortschritt.
     farbe(x, y, cmy, radiusCm, amount) {
       const r = state.cmToUv(radiusCm);
       for (const k of kopien(x, y, 0, 0, puffer)) {
         fluid.splatDye(k.x, k.y, cmy, r, amount);
       }
+      state.farbPunkteGesamt += amount;
     },
 
     // Verdünnen: zieht Pigment heraus.

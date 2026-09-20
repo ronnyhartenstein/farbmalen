@@ -1,8 +1,9 @@
 # Farbmalen
 
 Farbe in eine Wanne gießen, zusehen wie sie zerläuft, mit Rührer und Rechen darin
-herumfahren, bis sich alles marmoriert. Kein Ziel, kein Punktestand — ein digitaler
-Marmorierteller zum Spielen.
+herumfahren, bis sich alles marmoriert. Kein Wettbewerb, kein Scheitern — aber wer
+malt, schaltet nach und nach mehr frei: ein digitaler Marmorierteller zum Spielen,
+der mitwächst.
 
 **→ [Jetzt spielen](http://blog.rh-flow.de/farbmalen/)**
 
@@ -21,16 +22,20 @@ Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen.
 
 ## Bedienung
 
-| Taste | Werkzeug | Was es tut |
-|---|---|---|
-| `1` | **Gießen** | Klick = ein Klecks von ca. 1 cm. Gedrückt halten schüttet nach: die Pfütze wächst und drückt die Nachbarn weg. |
-| `2` | **Pinsel** | Zieht Farbe und Strömung entlang des Strichs. Je schneller, desto mehr Schwung. |
-| `3` | **Schaber** | Eine breite flache Kante, die Farbe zur Seite schiebt, ohne selbst welche aufzutragen. |
-| `4` | **Rührer** | Dreht langsam und zieht Farben spiralig ineinander. |
-| `5` | **Rechen** | Sieben Zinken quer zur Bewegung — das ergibt das klassische Marmormuster. |
-| `6` | **Pusten** | Bläst die Farbe nach außen, wie durch einen Strohhalm. |
-| `7` | **Seife** | Ein Klick, und die Farbe flieht schlagartig. Der Milch-und-Lebensmittelfarbe-Versuch. |
-| `8` | **Wasser** | Verdünnt das Pigment — zum Aufhellen und Wegwischen. |
+| Werkzeug | Was es tut |
+|---|---|
+| **Gießen** | Klick = ein Klecks von ca. 1 cm. Gedrückt halten schüttet nach: die Pfütze wächst und drückt die Nachbarn weg. |
+| **Pinsel** | Zieht Farbe und Strömung entlang des Strichs. Je schneller, desto mehr Schwung. |
+| **Wasser** | Verdünnt das Pigment — zum Aufhellen und Wegwischen. |
+| **Rechen** | Sieben Zinken quer zur Bewegung — das ergibt das klassische Marmormuster. |
+| **Rührer** | Dreht langsam und zieht Farben spiralig ineinander. |
+| **Schaber** | Eine breite flache Kante, die Farbe zur Seite schiebt, ohne selbst welche aufzutragen. |
+| **Pusten** | Bläst die Farbe nach außen, wie durch einen Strohhalm. |
+| **Seife** | Ein Klick, und die Farbe flieht schlagartig. Der Milch-und-Lebensmittelfarbe-Versuch. |
+
+Die ersten drei sind von Anfang an da, die übrigen fünf schalten sich beim Spielen
+nach und nach frei (siehe unten). Zifferntasten `1`–`8` wählen das jeweils an dieser
+Position **sichtbare** Werkzeug — welches das ist, wächst mit dem Fortschritt mit.
 
 | Taste | Wirkung |
 |---|---|
@@ -67,6 +72,23 @@ Und `1 cm` ist wörtlich gemeint: Ein verstecktes `<div style="width:1cm">` wird
 ausgemessen, alle Werkzeuggrößen sind in Zentimetern definiert. Mit dem Lineal am
 Bildschirm nachprüfbar.
 
+## Level & Freischaltungen
+
+Gestartet wird mit Gießen, Pinsel, Wasser und fünf Grundfarben — genug für den
+kompletten Mischzyklus. Jeder Tropfen aufgetragener Farbe (nicht Wasser) zählt zu
+einer Punktzahl, die über eine Stufentabelle in ein Level übersetzt wird. Bei jedem
+Levelaufstieg kommt etwas dazu: ein weiteres Werkzeug, ein bis zwei Farben, später
+einstellbare Werkzeug-Parameter (Pinsel-Dicke, Rührer-Tempo).
+
+Noch nicht Freigeschaltetes ist komplett unsichtbar — kein Ausgrauen, kein
+Schloss-Symbol. Es taucht beim Freischalten live in der Werkzeugleiste bzw. Palette
+auf, mit Toast, Bildschirmblitz und einem aufsteigenden Ton. Der Fortschrittsbalken
+über der Farbpalette zeigt das aktuelle Level.
+
+Die Stufentabelle steht in `src/fortschritt.js`, gemessen statt geraten: Erste Stufe
+soll nach wenigen Sekunden fallen, nicht nach vielen Minuten — kalibriert über
+`test/fortschritt.html` (siehe unten).
+
 ## Aufbau
 
 ```
@@ -77,13 +99,16 @@ src/sim/splat.js      Einzige Stelle, an der Werkzeuge die Simulation berühren 
 src/sim/glitter.js    Glitzerpartikel per Transform Feedback
 src/render/present.js Pigment → Licht, Papier, nasser Glanz
 src/tools/            Ein Werkzeug = eine Datei mit onDown/tick/onUp
-src/ui/               Werkzeugleiste, Farbpalette, Galerie
+src/fortschritt.js    Stufentabelle: was ab welchem Level frei ist
+src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken
 src/audio/sfx.js      Töne, komplett synthetisch (keine Audio-Dateien)
 test/                 Prüfseiten, siehe unten
 ```
 
-Ein neues Werkzeug braucht eine Datei in `src/tools/` und einen Eintrag in
-`src/tools/index.js` — Leiste und Tastenbelegung ergeben sich daraus von selbst.
+Ein neues Werkzeug braucht eine Datei in `src/tools/`, einen Eintrag in
+`src/tools/index.js` (Registry) und einen Platz in `src/fortschritt.js`
+(`STARTWERKZEUGE` oder eine Stufe) — sonst bleibt es unsichtbar, weil Leiste und
+Tastenbelegung sich aus dem Freischaltstatus ergeben.
 
 ## Prüfseiten
 
@@ -96,6 +121,7 @@ Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der
 | `test/szenen.html` | Fertige Bilder: `?szene=marmor`, `?szene=mandala`, `?szene=werkzeuge` |
 | `test/abklatsch.html` | Weg vom Zeichenpuffer in die Galerie samt Speicherüberlauf |
 | `test/diagnose.html` | Ob dieser Browser alles kann, was die Simulation braucht — erste Anlaufstelle, wenn es irgendwo schwarz bleibt |
+| `test/fortschritt.html` | Nach wie vielen Sekunden welches Level fällt, für verschiedene Spielweisen — Grundlage der Stufentabelle |
 
 Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
 so laufen sie auch in einem headless gestarteten Browser durch.

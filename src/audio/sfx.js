@@ -168,6 +168,27 @@ export function createAudio(state) {
       osz.stop(c.currentTime + 0.1);
     },
 
+    // Levelaufstieg (#12): ein aufsteigender Dreiklang — das Gegenstück zum
+    // fallenden plopp() beim Gießen.
+    levelAuf() {
+      const c = an();
+      if (!c) return;
+      const start = c.currentTime;
+      [523.25, 659.25, 783.99].forEach((frequenz, i) => {
+        const osz = c.createOscillator();
+        const gain = c.createGain();
+        osz.type = 'triangle';
+        osz.frequency.setValueAtTime(frequenz, start);
+        const beginn = start + i * 0.09;
+        gain.gain.setValueAtTime(0.0001, beginn);
+        gain.gain.exponentialRampToValueAtTime(0.3, beginn + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, beginn + 0.35);
+        osz.connect(gain).connect(master);
+        osz.start(beginn);
+        osz.stop(beginn + 0.4);
+      });
+    },
+
     schuetteln() {
       const c = an();
       if (!c) return;
