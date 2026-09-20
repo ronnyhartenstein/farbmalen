@@ -17,6 +17,7 @@ import { createGalerie } from './ui/gallery.js';
 import { createFortschritt } from './ui/fortschritt.js';
 import { createAbzeichenUI } from './ui/abzeichen.js';
 import { FARBE_ABZEICHEN, WASSER_ABZEICHEN } from './abzeichen.js';
+import { createTintenwaechter } from './ui/tintenwaechter.js';
 import {
   levelVon,
   werkzeugeBisLevel,
@@ -75,6 +76,11 @@ function los(gl) {
 
   let abklatschAusstehend = false;
 
+  // Tintenwächter (#10): eigener Arcade-Modus, eigene zweite Fluidsimulation.
+  // Braucht keine dynamisch gebaute DOM (die Overlay-Bildschirme stehen fest in
+  // index.html), kann also schon vor dem Reglerblock entstehen.
+  const tintenwaechter = createTintenwaechter(gl, blit, presenter, zeiger, state, { audio });
+
   // --- Rückmeldungen ---
   // Weiter oben als früher: Level & Freischaltungen (#12) brauchen melde()/blitzen()
   // schon beim Aufbau der Werkzeugleiste/Palette/Regler weiter unten.
@@ -101,6 +107,7 @@ function los(gl) {
     abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
     galerie: () => (galerie.offen ? galerie.schliessen() : galerie.oeffnen()),
     abzeichen: () => (abzeichenUI.offen ? abzeichenUI.schliessen() : abzeichenUI.oeffnen()),
+    tintenwaechter: () => tintenwaechter.betreten(),
     neuesBlatt: () => {
       if (!confirm('Alles wegwischen und neu anfangen?')) return;
       fluid.neuesBlatt();
@@ -134,6 +141,15 @@ function los(gl) {
     const taste = ev.key.toLowerCase();
 
     if (taste === 'escape' && galerie.offen) { galerie.schliessen(); return; }
+
+    // Tintenwächter (#10) hat eine eigene, viel kleinere Tastenbelegung — die
+    // Zifferntasten/Leertaste/etc. des freien Malens sollen hier nicht durchgreifen.
+    if (tintenwaechter.aktiv) {
+      if (taste === 'escape') document.getElementById('tw-aufhoeren')?.click();
+      else if (ev.key === '1') document.getElementById('tw-wasser')?.click();
+      else if (ev.key === '2') document.getElementById('tw-schaber')?.click();
+      return;
+    }
 
     const ziffer = Number(ev.key);
     if (Number.isInteger(ziffer) && ziffer >= 1 && ziffer <= WERKZEUGE.length) {
@@ -185,7 +201,7 @@ function los(gl) {
   if (debugAn) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
-    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, galerie, melde };
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, tintenwaechter, galerie, melde };
 
     // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
     // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
@@ -240,47 +256,55 @@ function los(gl) {
     // etwa wenn der Tab im Hintergrund war.
     const dt = Math.min(Math.max(roh, 1 / 240), 1 / 60);
 
-    passeGroesseAn(fluid);
+    if (passeGroesseAn(fluid)) tintenwaechter.resize();
 
     eingabe.frameBeginn(dt);
 
-    const werkzeug = werkzeugNach(state.werkzeug);
-
-    let cmy;
-    if (state.regenbogenAktiv) {
-      if (zeiger.gedrueckt) regenbogenPhase = (regenbogenPhase + dt / REGENBOGEN_SEKUNDEN) % 1;
-      cmy = hslZuPigment(regenbogenPhase * 360, 0.85, 0.5);
+    if (tintenwaechter.laeuft) {
+      // Tintenwächter (#10) hat den Bildschirm für sich — das freie Malen pausiert
+      // währenddessen komplett (kein fluid.step(), kein Rendern), das Bild bleibt
+      // beim Zurückkommen exakt so stehen, wie es war.
+      tintenwaechter.tick(dt);
+      tintenwaechter.render();
     } else {
-      cmy = hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex);
-    }
+      const werkzeug = werkzeugNach(state.werkzeug);
 
-    const ctx = { pinsel, zeiger, state, audio, cmy };
+      let cmy;
+      if (state.regenbogenAktiv) {
+        if (zeiger.gedrueckt) regenbogenPhase = (regenbogenPhase + dt / REGENBOGEN_SEKUNDEN) % 1;
+        cmy = hslZuPigment(regenbogenPhase * 360, 0.85, 0.5);
+      } else {
+        cmy = hexZuPigment(PALETTE[state.farbe % PALETTE.length].hex);
+      }
 
-    if (zeiger.neuGedrueckt) {
-      audio.aufwecken();
-      werkzeug.onDown?.(ctx);
-    }
-    werkzeug.tick?.(ctx, dt);
-    if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
+      const ctx = { pinsel, zeiger, state, audio, cmy };
 
-    // Level & Freischaltungen (#12) und Abzeichen (#11): direkt nach dem Werkzeug-
-    // Tick, damit Punkte aus diesem Bild sofort zählen.
-    fortschritt.pruefeLevelaufstieg();
-    abzeichenUI.pruefeAbzeichen();
+      if (zeiger.neuGedrueckt) {
+        audio.aufwecken();
+        werkzeug.onDown?.(ctx);
+      }
+      werkzeug.tick?.(ctx, dt);
+      if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
 
-    fluid.step(dt, state.naesse);
-    if (state.glitzer) glitzer.schritt(fluid.velocity, dt);
+      // Level & Freischaltungen (#12) und Abzeichen (#11): direkt nach dem
+      // Werkzeug-Tick, damit Punkte aus diesem Bild sofort zählen.
+      fortschritt.pruefeLevelaufstieg();
+      abzeichenUI.pruefeAbzeichen();
 
-    presenter.render(fluid.dye.read, 1.0);
-    if (state.glitzer) glitzer.zeichnen(3.2 * dpr);
+      fluid.step(dt, state.naesse);
+      if (state.glitzer) glitzer.schritt(fluid.velocity, dt);
 
-    // Muss im selben Bild passieren, solange der Zeichenpuffer noch steht.
-    if (abklatschAusstehend) {
-      abklatschAusstehend = false;
-      galerie.abklatschen(canvas);
-      blitzen();
-      audio.klick();
-      melde('Abgeklatscht! Liegt in der Galerie.');
+      presenter.render(fluid.dye.read, 1.0);
+      if (state.glitzer) glitzer.zeichnen(3.2 * dpr);
+
+      // Muss im selben Bild passieren, solange der Zeichenpuffer noch steht.
+      if (abklatschAusstehend) {
+        abklatschAusstehend = false;
+        galerie.abklatschen(canvas);
+        blitzen();
+        audio.klick();
+        melde('Abgeklatscht! Liegt in der Galerie.');
+      }
     }
 
     audio.tick(dt);
