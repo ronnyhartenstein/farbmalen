@@ -8,14 +8,19 @@
 // src/fortschritt.js und src/abzeichen.js.
 
 // Feste Quellpunkte in UV-Koordinaten (0..1, y von unten wie überall in der Sim).
-// Zwei von Anfang an, dann alle 40s eine weitere dazu, bis zu fünf — mehr Fronten
-// statt nur schnellerer Nachschub, das ist die zweite Eskalationsachse.
+// Zwei von Anfang an, dann alle 40s eine weitere dazu — mehr Fronten statt nur
+// schnellerer Nachschub, das ist die zweite Eskalationsachse. Die letzten beiden,
+// unten links/rechts neben der schon vorhandenen unteren Quelle, sind bewusst als
+// später Endgegner-Moment gedacht: wer so lange durchhält, bekommt die ganze
+// untere Kante auf einmal.
 export const QUELLEN = [
   { x: 0.22, y: 0.7, abZeit: 0 },
   { x: 0.78, y: 0.7, abZeit: 0 },
   { x: 0.5, y: 0.22, abZeit: 40 },
   { x: 0.15, y: 0.85, abZeit: 80 },
   { x: 0.85, y: 0.85, abZeit: 120 },
+  { x: 0.15, y: 0.15, abZeit: 160 },
+  { x: 0.85, y: 0.15, abZeit: 200 },
 ];
 
 // Pigment der bösen Tinte — dunkles Violett-Schwarz, kein Teil der normalen Palette.
