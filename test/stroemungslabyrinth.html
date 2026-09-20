@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Strömungslabyrinth — Steuerbarkeits-Prototyp</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0d1117; color: #e6edf3; font: 14px/1.5 system-ui, sans-serif; }
+  #cm-ruler { position: absolute; width: 1cm; height: 1cm; top: -10cm; left: -10cm; }
+  .kopf { padding: 12px 16px 4px; }
+  .kopf h1 { font-size: 16px; margin: 0 0 6px; }
+  .kopf p { margin: 4px 0; color: #9aa4b2; max-width: 62em; }
+  .leiste { display: flex; gap: 8px; align-items: center; padding: 0 16px 12px; flex-wrap: wrap; }
+  .leiste button {
+    background: #1c2530; color: #e6edf3; border: 1px solid #30394a; border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; font: inherit;
+  }
+  .leiste button[aria-pressed="true"] { background: #3468d8; border-color: #3468d8; }
+  .leiste label { display: flex; gap: 6px; align-items: center; color: #9aa4b2; }
+  #buehne {
+    position: relative; margin: 0 16px 16px; border: 1px solid #30394a; border-radius: 8px;
+    overflow: hidden; touch-action: none;
+  }
+  canvas { display: block; width: 100%; height: 68vh; background: #fff; }
+  .marker {
+    position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    border-radius: 50%; pointer-events: none;
+  }
+  .marker.start { border: 2px dashed #3468d8; }
+  .marker.ziel { border: 2px dashed #2ea043; }
+  .marker::after {
+    content: attr(data-label); position: absolute; top: -20px; left: 50%;
+    transform: translateX(-50%); font-size: 11px; white-space: nowrap;
+  }
+  .marker.start::after { color: #3468d8; }
+  .marker.ziel::after { color: #2ea043; }
+</style>
+</head>
+<body>
+<div id="cm-ruler"></div>
+<div class="kopf">
+  <h1>Strömungslabyrinth — Steuerbarkeits-Prototyp (Issue #9, Phase 0)</h1>
+  <p>
+    Ein einzelnes Testobjekt (roter Kreis, <code>src/sim/objekt.js</code> — der
+    "Ein-Partikel-Sonderfall" der Glitzer-Technik ohne Zufalls-Respawn) schwimmt im
+    Geschwindigkeitsfeld der echten Fluidsimulation. Die goldenen Funken zeigen die
+    Strömung selbst (normale Glitzerpartikel). Aufgabe: mit Rührer, Pusten, Schaber
+    und Seife versuchen, das Objekt vom Start- zum Zielmarker zu lenken — und ehrlich
+    einschätzen, ob sich das zielgenau anfühlt oder wie Glücksspiel. Bewusst
+    <strong>ohne</strong> Level, Hindernisse, Ziel-/Kollisionserkennung oder
+    Gewinn-Screen — nur der reine Steuerungs-Feel.
+  </p>
+</div>
+<div class="leiste">
+  <button type="button" data-werkzeug="ruehrer" aria-pressed="true">1 Rührer</button>
+  <button type="button" data-werkzeug="pusten">2 Pusten</button>
+  <button type="button" data-werkzeug="schaber">3 Schaber</button>
+  <button type="button" data-werkzeug="seife">4 Seife</button>
+  <button type="button" id="reset">Zurücksetzen</button>
+  <label>
+    Kraft-Multiplikator
+    <input id="kraft" type="range" min="1" max="6" step="0.5" value="1">
+    <span id="kraft-wert">1.0×</span>
+  </label>
+</div>
+<div id="buehne">
+  <canvas id="wanne"></canvas>
+  <div class="marker start" id="marker-start" data-label="Start"></div>
+  <div class="marker ziel" id="marker-ziel" data-label="Ziel"></div>
+</div>
+<script type="module">
+import { createContext } from '../src/gl/context.js';
+import { createBlitter } from '../src/gl/fbo.js';
+import { createFluid } from '../src/sim/fluid.js';
+import { createPinsel } from '../src/sim/splat.js';
+import { createPresenter } from '../src/render/present.js';
+import { createZeiger } from '../src/input/pointer.js';
+import { createGlitzer } from '../src/sim/glitter.js';
+import { createObjekt } from '../src/sim/objekt.js';
+import { ruehrer } from '../src/tools/ruehrer.js';
+import { pusten } from '../src/tools/pusten.js';
+import { schaber } from '../src/tools/schaber.js';
+import { seife } from '../src/tools/seife.js';
+
+const START = { x: 0.15, y: 0.22 };
+const ZIEL = { x: 0.85, y: 0.78 };
+
+const canvas = document.getElementById('wanne');
+const { gl, fehler } = createContext(canvas);
+if (!gl) {
+  document.body.innerHTML = '<p style="padding:16px;color:#f88">' + fehler + '</p>';
+  throw new Error(fehler);
+}
+
+const blit = createBlitter(gl);
+const fluid = createFluid(gl, blit);
+const presenter = createPresenter(gl, blit);
+const glitzer = createGlitzer(gl);
+const objekt = createObjekt(gl, START.x, START.y);
+const eingabe = createZeiger(canvas);
+const zeiger = eingabe.zeiger;
+
+// Fake-State nach Vorbild von test/tintenwaechter.html — nur was cmToUv() für die
+// unverändert wiederverwendeten Werkzeuge braucht.
+const state = {
+  symmetrie: 1,
+  cssPxProCm: 37.8,
+  wanneHoehePx: canvas.clientHeight || 640,
+  cmToUv(cm) {
+    return (cm * this.cssPxProCm) / this.wanneHoehePx;
+  },
+};
+
+function kalibriere() {
+  const lineal = document.getElementById('cm-ruler').getBoundingClientRect().width;
+  state.cssPxProCm = lineal > 4 ? lineal : 37.8;
+  state.wanneHoehePx = canvas.clientHeight || 640;
+}
+
+function passeGroesseAn() {
+  const b = Math.max(1, Math.round(canvas.clientWidth));
+  const h = Math.max(1, Math.round(canvas.clientHeight));
+  if (canvas.width === b && canvas.height === h) return;
+  canvas.width = b;
+  canvas.height = h;
+  kalibriere();
+  fluid.resize();
+}
+
+function setzeMarker(el, uv) {
+  el.style.left = uv.x * 100 + '%';
+  el.style.top = (1 - uv.y) * 100 + '%';
+}
+setzeMarker(document.getElementById('marker-start'), START);
+setzeMarker(document.getElementById('marker-ziel'), ZIEL);
+
+const WERKZEUGE = { ruehrer, pusten, schaber, seife };
+let aktivesWerkzeug = 'ruehrer';
+
+const leiste = document.querySelector('.leiste');
+leiste.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button[data-werkzeug]');
+  if (!btn) return;
+  aktivesWerkzeug = btn.dataset.werkzeug;
+  for (const b of leiste.querySelectorAll('button[data-werkzeug]')) {
+    b.setAttribute('aria-pressed', String(b === btn));
+  }
+});
+
+document.getElementById('reset').addEventListener('click', () => {
+  fluid.neuesBlatt();
+  objekt.reset(START.x, START.y);
+});
+
+const kraftSlider = document.getElementById('kraft');
+const kraftWert = document.getElementById('kraft-wert');
+kraftSlider.addEventListener('input', () => {
+  kraftWert.textContent = Number(kraftSlider.value).toFixed(1) + '×';
+});
+
+// Wickelt den echten Pinselkopf, um probeweise stärkere modus-eigene Kräfte
+// auszuprobieren (Phase-0-Verifikationsschritt 5) — src/tools/*.js bleibt unverändert.
+const basisPinsel = createPinsel(fluid, state);
+const pinsel = {
+  farbe: (...a) => basisPinsel.farbe(...a),
+  wasser: (...a) => basisPinsel.wasser(...a),
+  schub: (x, y, dx, dy, kraft, r) => basisPinsel.schub(x, y, dx, dy, kraft * Number(kraftSlider.value), r),
+  radial: (x, y, staerke, r) => basisPinsel.radial(x, y, staerke * Number(kraftSlider.value), r),
+  wirbel: (x, y, staerke, r) => basisPinsel.wirbel(x, y, staerke * Number(kraftSlider.value), r),
+};
+
+passeGroesseAn();
+window.addEventListener('resize', passeGroesseAn);
+
+let letzte = performance.now();
+function frame(jetzt) {
+  const roh = (jetzt - letzte) / 1000;
+  letzte = jetzt;
+  const dt = Math.min(Math.max(roh, 1 / 240), 1 / 60);
+
+  passeGroesseAn();
+  eingabe.frameBeginn(dt);
+
+  const werkzeug = WERKZEUGE[aktivesWerkzeug];
+  const ctx = { pinsel, zeiger, state, audio: null };
+  if (zeiger.neuGedrueckt) werkzeug.onDown?.(ctx);
+  werkzeug.tick?.(ctx, dt);
+  if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
+
+  fluid.step(dt, 0);
+  objekt.schritt(fluid.velocity, dt);
+  glitzer.schritt(fluid.velocity, dt);
+
+  presenter.render(fluid.dye.read, 1.0);
+  glitzer.zeichnen(2.4);
+  objekt.zeichnen(28);
+
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

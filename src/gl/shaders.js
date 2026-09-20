@@ -373,6 +373,50 @@ void main() {
   fragColor = vec4(vec3(1.0, 0.96, 0.82) * a, a);
 }`;
 
+// Strömungslabyrinth (#9, Phase 0): wie Glitzer, aber ein einzelnes Partikel mit
+// fester Identität statt Zufalls-Respawn — Prototyp, um zu prüfen, ob sich ein
+// Objekt im Geschwindigkeitsfeld zielgenau steuern lässt (test/stroemungslabyrinth.html).
+export const objektUpdateVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+uniform sampler2D uVelocity;
+uniform vec2 uTexel;
+uniform float uDt;
+out vec2 vPos;
+
+void main() {
+  vec2 v = texture(uVelocity, aPos).xy;
+  vec2 p = aPos + v * uTexel * uDt;
+  vPos = clamp(p, vec2(0.0), vec2(1.0));
+  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+}`;
+
+export const objektUpdateFragment = `#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() { fragColor = vec4(0.0); }`;
+
+export const objektDrawVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+uniform float uGroesse;
+void main() {
+  gl_Position = vec4(aPos * 2.0 - 1.0, 0.0, 1.0);
+  gl_PointSize = uGroesse;
+}`;
+
+export const objektDrawFragment = `#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() {
+  vec2 p = gl_PointCoord * 2.0 - 1.0;
+  float d = length(p);
+  float kern = smoothstep(1.0, 0.72, d);
+  float ring = smoothstep(0.78, 0.64, d) - smoothstep(0.64, 0.5, d);
+  vec3 farbe = mix(vec3(0.86, 0.22, 0.16), vec3(1.0, 0.96, 0.9), ring);
+  fragColor = vec4(farbe, kern);
+}`;
+
 // Tintenwächter (#10): Flächenabdeckung messen, ohne die Pipeline abzuwürgen. Statt
 // das volle Dye-Bild zu lesen, wird hier klein gerendert (winziges Renderziel, siehe
 // src/sim/deckung.js) — jeder Ausgabetexel mittelt ein RASTER×RASTER-Raster aus der
