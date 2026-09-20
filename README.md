@@ -19,8 +19,9 @@ python3 -m http.server 8080
 ```
 
 Mit `?debug=1` erscheint eine Anzeige mit Bildrate und Gitterauflösungen, dazu ein
-Knopf pro Level, der dessen Aufstiegs-Popup zeigt, ohne dafür wirklich malen zu
-müssen (auch per Konsole: `farbmalen.fortschritt.vorschauStufe(3)`).
+Knopf pro Level, der wirklich dorthin springt — echte Punkte, echte Freischaltung
+beim Klick auf „Wohoo!" — ohne dafür wirklich malen zu müssen (auch per Konsole:
+`farbmalen.fortschritt.testeStufe(3)`).
 
 ## Bedienung
 

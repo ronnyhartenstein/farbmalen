@@ -285,6 +285,7 @@ input[type="range"] {
 .levelup-zahl {
   display: inline-block;
   font-size: 64px;
+  font-weight: 900;
   line-height: 1;
   text-shadow: 0 4px 18px rgba(255, 210, 122, 0.5);
   animation: levelup-zahl-pop 0.7s cubic-bezier(0.28, 1.65, 0.5, 1),

@@ -119,16 +119,28 @@ export function createFortschritt(state, { melde, blitzen, audio, toolbar, palet
     anzeigen(level, state.farbPunkteGesamt);
   }
 
-  // Nur zum Testen (?debug=1): zeigt das Popup einer Stufe direkt an, ohne
-  // Warteschlange, ohne echte Punkte/Freischaltungen zu verändern. Ein Klick auf
-  // den Knopf schließt es dann einfach wieder (die Warteschlange ist ja leer).
-  function vorschauStufe(level) {
+  // Nur zum Testen (?debug=1): springt wirklich auf diese Stufe — setzt die echten
+  // Punkte auf ihre Schwelle, holt übersprungene Zwischenstufen still nach (wie beim
+  // Laden eines weit fortgeschrittenen Spielstands, ohne deren Popups zu zeigen) und
+  // stößt dann den echten Levelaufstieg an. Der Klick auf "Wohoo!" schaltet also
+  // wirklich frei und speichert — kein reiner Anschauknopf. Geht nur vorwärts: schon
+  // erreichte Stufen werden nicht rückgängig gemacht, ein zweiter Klick auf eine
+  // längst bestandene Stufe zeigt daher nichts noch mal an.
+  function testeStufe(level) {
     const stufe = stufeVon(level);
-    if (stufe) zeigePopup(level, stufe);
+    if (!stufe || state.farbPunkteGesamt >= stufe.punkte) return;
+    for (let l = letztesLevel + 1; l < level; l++) {
+      const zwischenstufe = stufeVon(l);
+      if (zwischenstufe) freischalten(zwischenstufe);
+    }
+    letztesLevel = level - 1;
+    state.farbPunkteGesamt = stufe.punkte;
+    state.speichern();
+    pruefeLevelaufstieg();
   }
 
   anzeigen(letztesLevel, state.farbPunkteGesamt);
   box.hidden = false;
 
-  return { pruefeLevelaufstieg, vorschauStufe };
+  return { pruefeLevelaufstieg, testeStufe };
 }

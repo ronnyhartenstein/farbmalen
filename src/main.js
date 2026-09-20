@@ -182,16 +182,17 @@ function los(gl) {
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
     window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, galerie, melde };
 
-    // Ein Knopf pro Stufe, um deren Levelaufstieg-Popup anzusehen, ohne dafür
-    // wirklich zu malen — auch per Konsole: farbmalen.fortschritt.vorschauStufe(3).
+    // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
+    // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
+    // Auch per Konsole: farbmalen.fortschritt.testeStufe(3).
     const stufenBox = document.getElementById('debug-stufen');
     stufenBox.hidden = false;
     STUFEN.forEach((stufe, i) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.textContent = `Vorschau L${i + 1}`;
+      b.textContent = `Test L${i + 1}`;
       b.title = stufe.titel;
-      b.addEventListener('click', () => fortschritt.vorschauStufe(i + 1));
+      b.addEventListener('click', () => fortschritt.testeStufe(i + 1));
       stufenBox.appendChild(b);
     });
   }
