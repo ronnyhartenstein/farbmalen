@@ -101,6 +101,16 @@ Die Stufentabelle steht in `src/fortschritt.js`, gemessen statt geraten: Erste S
 soll nach wenigen Sekunden fallen, nicht nach vielen Minuten — kalibriert über
 `test/fortschritt.html` (siehe unten).
 
+## Abzeichen
+
+Getrennt von den Level-Freischaltungen: Der Knopf „Abzeichen" im Reglerblock öffnet
+eine Übersicht, wie viel Farbe und Wasser insgesamt je verbraucht wurden (in ml/l,
+lebenslang, über alle Sitzungen), mit Auszeichnungen bei bestimmten Mengen-Stufen.
+Anders als die Level-Freischaltungen schaltet ein Abzeichen nichts frei — reine
+Trophäen fürs Weiterspielen, mit eigenem Ton. Farbe und Wasser zählen unabhängig
+und haben eigene Stufen; die erste fällt normalerweise innerhalb einer Sitzung, die
+höheren brauchen mehrere — kalibriert über `test/abzeichen.html`.
+
 ## Aufbau
 
 ```
@@ -112,7 +122,8 @@ src/sim/glitter.js    Glitzerpartikel per Transform Feedback
 src/render/present.js Pigment → Licht, Papier, nasser Glanz
 src/tools/            Ein Werkzeug = eine Datei mit onDown/tick/onUp
 src/fortschritt.js    Stufentabelle: was ab welchem Level frei ist
-src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken
+src/abzeichen.js      Mengen-Stufen für die Abzeichen-Trophäen
+src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken, Abzeichen
 src/audio/sfx.js      Töne, komplett synthetisch (keine Audio-Dateien)
 test/                 Prüfseiten, siehe unten
 ```
@@ -134,6 +145,7 @@ Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der
 | `test/abklatsch.html` | Weg vom Zeichenpuffer in die Galerie samt Speicherüberlauf |
 | `test/diagnose.html` | Ob dieser Browser alles kann, was die Simulation braucht — erste Anlaufstelle, wenn es irgendwo schwarz bleibt |
 | `test/fortschritt.html` | Nach wie vielen Sekunden welches Level fällt, für verschiedene Spielweisen — Grundlage der Stufentabelle |
+| `test/abzeichen.html` | Nach wie viel aktiver Spielzeit welches Abzeichen fällt — Grundlage der Mengen-Stufen |
 
 Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
 so laufen sie auch in einem headless gestarteten Browser durch.

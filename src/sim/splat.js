@@ -61,11 +61,15 @@ export function createPinsel(fluid, state) {
     },
 
     // Verdünnen: zieht Pigment heraus.
+    //
+    // Zählt für den Volumenzähler (#11) mit — analog zu farbe() oben, aber ohne
+    // Auswirkung auf die Level-Freischaltungen (#12), die bewusst nur Farbe zählen.
     wasser(x, y, radiusCm, amount) {
       const r = state.cmToUv(radiusCm);
       for (const k of kopien(x, y, 0, 0, puffer)) {
         fluid.splatWater(k.x, k.y, r, amount);
       }
+      state.wasserEinheitenGesamt += amount;
     },
 
     // Gerichteter Schub. dx/dy ist eine Bewegung in uv, kraft skaliert sie.

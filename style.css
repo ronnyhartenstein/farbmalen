@@ -405,6 +405,70 @@ input[type="range"] {
 
 .galerie-leer { margin: 0; opacity: 0.6; }
 
+/* --- Abzeichen (#11) --- */
+
+.abzeichen-spalten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 28px;
+  max-width: 700px;
+  overflow: auto;
+}
+
+.abzeichen-spalte h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.abzeichen-spalte h3 span { font-size: 13px; font-weight: 500; opacity: 0.7; }
+
+.abzeichen-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.abzeichen-eintrag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0.45;
+}
+
+.abzeichen-eintrag.abzeichen-erreicht {
+  opacity: 1;
+  background: rgba(255, 210, 122, 0.14);
+}
+
+.abzeichen-marke {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+}
+
+.abzeichen-erreicht .abzeichen-marke {
+  background: var(--aktiv);
+  color: #2a2016;
+}
+
+.abzeichen-titel { flex: 1; font-weight: 600; font-size: 14px; }
+.abzeichen-schwelle { font-size: 12px; opacity: 0.75; }
+
 /* --- Rückmeldungen --- */
 
 .toast {

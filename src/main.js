@@ -15,6 +15,7 @@ import { createToolbar, createRegler } from './ui/toolbar.js';
 import { createPalette } from './ui/palette.js';
 import { createGalerie } from './ui/gallery.js';
 import { createFortschritt } from './ui/fortschritt.js';
+import { createAbzeichenUI } from './ui/abzeichen.js';
 import {
   levelVon,
   werkzeugeBisLevel,
@@ -94,10 +95,13 @@ function los(gl) {
     setTimeout(() => { blitzEl.hidden = true; }, 340);
   }
 
+  const abzeichenUI = createAbzeichenUI(state, { melde, audio });
+
   const aktionen = {
     beiWechsel: () => audio.klick(),
     abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
     galerie: () => (galerie.offen ? galerie.schliessen() : galerie.oeffnen()),
+    abzeichen: () => (abzeichenUI.offen ? abzeichenUI.schliessen() : abzeichenUI.oeffnen()),
     neuesBlatt: () => {
       if (!confirm('Alles wegwischen und neu anfangen?')) return;
       fluid.neuesBlatt();
@@ -180,7 +184,7 @@ function los(gl) {
   if (debugAn) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
-    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, galerie, melde };
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, galerie, melde };
 
     // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
     // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
@@ -236,9 +240,10 @@ function los(gl) {
     werkzeug.tick?.(ctx, dt);
     if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
 
-    // Level & Freischaltungen (#12): direkt nach dem Werkzeug-Tick, damit Punkte aus
-    // diesem Bild sofort zählen.
+    // Level & Freischaltungen (#12) und Abzeichen (#11): direkt nach dem Werkzeug-
+    // Tick, damit Punkte aus diesem Bild sofort zählen.
     fortschritt.pruefeLevelaufstieg();
+    abzeichenUI.pruefeAbzeichen();
 
     fluid.step(dt, state.naesse);
     if (state.glitzer) glitzer.schritt(fluid.velocity, dt);
