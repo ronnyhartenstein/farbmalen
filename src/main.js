@@ -15,7 +15,13 @@ import { createToolbar, createRegler } from './ui/toolbar.js';
 import { createPalette } from './ui/palette.js';
 import { createGalerie } from './ui/gallery.js';
 import { createFortschritt } from './ui/fortschritt.js';
-import { levelVon, werkzeugeBisLevel, farbenBisLevel, einstellungenBisLevel } from './fortschritt.js';
+import {
+  levelVon,
+  werkzeugeBisLevel,
+  farbenBisLevel,
+  einstellungenBisLevel,
+  reglerBloeckeBisLevel,
+} from './fortschritt.js';
 
 state.laden();
 
@@ -111,6 +117,7 @@ function los(gl) {
   const regler = createRegler(state, aktionen);
   const palette = createPalette(state, aktionen, farbenBisLevel(startLevel));
   for (const name of einstellungenBisLevel(startLevel)) regler.zeigeEinstellung(name);
+  for (const id of reglerBloeckeBisLevel(startLevel)) regler.zeigeBlock(id);
 
   const fortschritt = createFortschritt(state, { melde, blitzen, audio, toolbar, palette, regler });
 

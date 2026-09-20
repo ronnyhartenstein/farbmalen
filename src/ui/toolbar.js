@@ -76,12 +76,22 @@ export function createToolbar(state, aktionen, sichtbareIds) {
 export function createRegler(state, aktionen) {
   const box = document.getElementById('regler');
 
+  // Level & Freischaltungen (#12): Nässe, Spiegel, Glitzer und Abklatsch/Galerie
+  // sind Spielinhalt und starten hinter `hidden`, genau wie die Werkzeug-
+  // Einstellungen weiter unten — `zeigeBlock()`/`zeigeEinstellung()` heben es beim
+  // Freischalten auf. Ton, Neues Blatt und Vollbild sind reine Bedienelemente und
+  // bleiben immer da, sonst könnte ein Kind nicht mal eben den Ton abstellen oder
+  // ein misslungenes Bild wegwischen.
   box.innerHTML = `
-    <p class="regler-titel">Spiegel</p>
-    <div class="knopfreihe" id="r-spiegel"></div>
+    <div id="r-block-spiegel" class="regler-einstellung" hidden>
+      <p class="regler-titel">Spiegel</p>
+      <div class="knopfreihe" id="r-spiegel"></div>
+    </div>
 
-    <p class="regler-titel">Nässe</p>
-    <input id="r-naesse" type="range" min="0" max="100" step="1" aria-label="Nässe">
+    <div id="r-block-naesse" class="regler-einstellung" hidden>
+      <p class="regler-titel">Nässe</p>
+      <input id="r-naesse" type="range" min="0" max="100" step="1" aria-label="Nässe">
+    </div>
 
     <div id="r-einstellung-pinselDicke" class="regler-einstellung" hidden>
       <p class="regler-titel">Pinsel-Dicke</p>
@@ -94,12 +104,15 @@ export function createRegler(state, aktionen) {
     </div>
 
     <div class="knopfreihe">
-      <button id="r-glitzer" class="knopf" type="button" aria-pressed="false">Glitzer</button>
       <button id="r-ton" class="knopf" type="button" aria-pressed="true">Ton</button>
+      <button id="r-glitzer" class="knopf" type="button" aria-pressed="false" hidden>Glitzer</button>
     </div>
 
-    <button id="r-abklatsch" class="knopf knopf-breit" type="button">Papier auflegen</button>
-    <button id="r-galerie" class="knopf knopf-breit" type="button">Galerie</button>
+    <div id="r-block-abklatsch" class="regler-einstellung" hidden>
+      <button id="r-abklatsch" class="knopf knopf-breit" type="button">Papier auflegen</button>
+      <button id="r-galerie" class="knopf knopf-breit" type="button">Galerie</button>
+    </div>
+
     <button id="r-neu" class="knopf knopf-breit" type="button">Neues Blatt</button>
     <button id="r-vollbild" class="knopf knopf-breit" type="button">Vollbild</button>
   `;
@@ -149,6 +162,14 @@ export function createRegler(state, aktionen) {
     if (block) block.hidden = false;
   }
 
+  // Für reglerBloecke aus der Stufentabelle: nimmt die DOM-Id direkt entgegen
+  // (kein Namens-Präfix wie bei zeigeEinstellung), damit fortschritt.js nicht
+  // wissen muss, wie die Regler-Ids intern aufgebaut sind.
+  function zeigeBlock(id) {
+    const el = box.querySelector(`#${id}`);
+    if (el) el.hidden = false;
+  }
+
   const glitzer = box.querySelector('#r-glitzer');
   glitzer.addEventListener('click', () => {
     state.glitzer = !state.glitzer;
@@ -176,5 +197,5 @@ export function createRegler(state, aktionen) {
   glitzer.setAttribute('aria-pressed', String(state.glitzer));
   ton.setAttribute('aria-pressed', String(state.ton));
 
-  return { setzeSpiegel, zeigeEinstellung };
+  return { setzeSpiegel, zeigeEinstellung, zeigeBlock };
 }

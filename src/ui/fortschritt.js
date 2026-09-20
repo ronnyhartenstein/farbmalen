@@ -31,6 +31,7 @@ export function createFortschritt(state, { melde, blitzen, audio, toolbar, palet
     if (stufe.werkzeug) toolbar.zeigeNeuesWerkzeug(stufe.werkzeug);
     for (const i of stufe.farben ?? []) palette.zeigeNeueFarbe(i);
     if (stufe.einstellung) regler.zeigeEinstellung(stufe.einstellung);
+    for (const id of stufe.reglerBloecke ?? []) regler.zeigeBlock(id);
   }
 
   function pruefeLevelaufstieg() {

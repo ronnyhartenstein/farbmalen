@@ -14,19 +14,27 @@ export const STARTWERKZEUGE = ['giessen', 'pinsel', 'wasser'];
 // Tiefschwarz, Türkis.
 export const STARTFARBEN = [0, 2, 6, 12, 5];
 
-// Startwert, keine Endabnahme — siehe test/fortschritt.html. Grob verdoppelnd,
-// damit die erste Stufe nach ein paar Sekunden Malen fällt (niedrige Hürden).
+// Startwert, keine Endabnahme — siehe test/fortschritt.html. Das allererste Gießen
+// (Level 1) darf ruhig etwas dauern, damit die erste Freischaltung sich verdient
+// anfühlt; danach wächst die Kurve bewusst FLACHER als eine Verdopplung — die
+// Schrittweite steigt nur noch mild (30, 40, 50, 70, 100, 140), nicht mehr
+// multiplikativ. Sonst würden spätere Level unverhältnismäßig lang dauern.
 // Rechen zuerst (größter optischer Ertrag), Seife zuletzt (der Knalleffekt als
 // Belohnung fürs Durchhalten). Die Werkzeug-Einstellungen kommen erst danach,
 // als Spätspiel-Ziel, wenn Werkzeuge und Farben schon komplett sind.
+//
+// reglerBloecke: DOM-Ids im rechten Reglerblock, die bei dieser Stufe sichtbar
+// werden (Ton, Neues Blatt und Vollbild bleiben dagegen immer da — reine
+// Bedienelemente, kein Spielinhalt). Auf die ersten vier Werkzeug-Stufen verteilt,
+// damit alles Inhaltliche innerhalb weniger Minuten frei ist.
 export const STUFEN = [
-  { punkte: 8, werkzeug: 'rechen', farben: [1, 3], titel: 'Rechen' },
-  { punkte: 20, werkzeug: 'ruehrer', farben: [8, 9], titel: 'Rührer' },
-  { punkte: 45, werkzeug: 'schaber', farben: [10, 7], titel: 'Schaber' },
-  { punkte: 95, werkzeug: 'pusten', farben: [4, 11], titel: 'Pusten' },
-  { punkte: 200, werkzeug: 'seife', farben: [13], titel: 'Seife & Gold' },
-  { punkte: 420, einstellung: 'pinselDicke', titel: 'Pinsel-Dicke einstellbar' },
-  { punkte: 900, einstellung: 'ruehrerTempo', titel: 'Rührer-Tempo einstellbar' },
+  { punkte: 30, werkzeug: 'rechen', farben: [1, 3], reglerBloecke: ['r-block-naesse'], titel: 'Rechen' },
+  { punkte: 60, werkzeug: 'ruehrer', farben: [8, 9], reglerBloecke: ['r-block-abklatsch'], titel: 'Rührer' },
+  { punkte: 100, werkzeug: 'schaber', farben: [10, 7], reglerBloecke: ['r-block-spiegel'], titel: 'Schaber' },
+  { punkte: 150, werkzeug: 'pusten', farben: [4, 11], reglerBloecke: ['r-glitzer'], titel: 'Pusten' },
+  { punkte: 220, werkzeug: 'seife', farben: [13], titel: 'Seife & Gold' },
+  { punkte: 320, einstellung: 'pinselDicke', titel: 'Pinsel-Dicke einstellbar' },
+  { punkte: 460, einstellung: 'ruehrerTempo', titel: 'Rührer-Tempo einstellbar' },
 ];
 
 // Anzeige-/Freischaltreihenfolge der Werkzeuge — bestimmt auch die Zifferntasten
@@ -86,4 +94,13 @@ export function einstellungenBisLevel(level) {
     if (stufe?.einstellung) namen.push(stufe.einstellung);
   }
   return namen;
+}
+
+export function reglerBloeckeBisLevel(level) {
+  const ids = [];
+  for (let l = 1; l <= level; l++) {
+    const stufe = stufeVon(l);
+    if (stufe?.reglerBloecke) ids.push(...stufe.reglerBloecke);
+  }
+  return ids;
 }

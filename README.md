@@ -75,15 +75,17 @@ Bildschirm nachprüfbar.
 ## Level & Freischaltungen
 
 Gestartet wird mit Gießen, Pinsel, Wasser und fünf Grundfarben — genug für den
-kompletten Mischzyklus. Jeder Tropfen aufgetragener Farbe (nicht Wasser) zählt zu
-einer Punktzahl, die über eine Stufentabelle in ein Level übersetzt wird. Bei jedem
-Levelaufstieg kommt etwas dazu: ein weiteres Werkzeug, ein bis zwei Farben, später
-einstellbare Werkzeug-Parameter (Pinsel-Dicke, Rührer-Tempo).
+kompletten Mischzyklus. Rechts steht anfangs nur Ton, Neues Blatt und Vollbild, reine
+Bedienelemente. Jeder Tropfen aufgetragener Farbe (nicht Wasser) zählt zu einer
+Punktzahl, die über eine Stufentabelle in ein Level übersetzt wird. Bei jedem
+Levelaufstieg kommt etwas dazu: ein weiteres Werkzeug, ein bis zwei Farben, ein Regler
+rechts (Nässe, Papier auflegen + Galerie, Spiegel, Glitzer — in dieser Reihenfolge),
+später einstellbare Werkzeug-Parameter (Pinsel-Dicke, Rührer-Tempo).
 
 Noch nicht Freigeschaltetes ist komplett unsichtbar — kein Ausgrauen, kein
-Schloss-Symbol. Es taucht beim Freischalten live in der Werkzeugleiste bzw. Palette
-auf, mit Toast, Bildschirmblitz und einem aufsteigenden Ton. Der Fortschrittsbalken
-über der Farbpalette zeigt das aktuelle Level.
+Schloss-Symbol. Es taucht beim Freischalten live in der Werkzeugleiste, Palette oder
+im Reglerblock auf, mit Toast, Bildschirmblitz und einem aufsteigenden Ton. Der
+Fortschrittsbalken über der Farbpalette zeigt das aktuelle Level.
 
 Die Stufentabelle steht in `src/fortschritt.js`, gemessen statt geraten: Erste Stufe
 soll nach wenigen Sekunden fallen, nicht nach vielen Minuten — kalibriert über
