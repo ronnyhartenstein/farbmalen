@@ -39,6 +39,8 @@ export function createTintenwaechter(gl, blit, presenter, zeiger, state, { audio
   const bestzeitStart = document.getElementById('tw-bestzeit-start');
   const timerEl = document.getElementById('tw-timer');
   const pegelEl = document.getElementById('tw-pegel');
+  const stufeBanner = document.getElementById('tw-stufe-banner');
+  const stufeZahlEl = document.getElementById('tw-stufe-zahl');
   const deckungFuellung = document.getElementById('tw-deckung-fuellung');
   const endeZeit = document.getElementById('tw-ende-zeit');
   const endeRekord = document.getElementById('tw-ende-rekord');
@@ -73,6 +75,7 @@ export function createTintenwaechter(gl, blit, presenter, zeiger, state, { audio
   let werkzeug = 'wasser';
   let deckung = 0;
   let bildZaehler = 0;
+  let letzterPegel = 1;
 
   function formatZeit(sek) {
     return `${Math.floor(sek)}s`;
@@ -114,6 +117,8 @@ export function createTintenwaechter(gl, blit, presenter, zeiger, state, { audio
     ueberlebenszeit = 0;
     deckung = 0;
     bildZaehler = 0;
+    letzterPegel = 1;
+    stufeBanner.classList.remove('tw-stufe-aktiv');
     waehleWerkzeug('wasser');
     aktualisiereHud();
     laeuft = true;
@@ -136,9 +141,28 @@ export function createTintenwaechter(gl, blit, presenter, zeiger, state, { audio
     zeigeScreen('ende');
   }
 
+  // Großer, mittiger "Stufe N"-Banner, der von hinten nach vorne heranzoomt (siehe
+  // tw-stufe-anflug in style.css) — bewusst kein Popup wie beim freien Level-Aufstieg
+  // (levelup-karte): Tintenwächter läuft in Echtzeit weiter, ein Klick zum Wegklicken
+  // würde die Runde einfrieren, während die Tinte weiterläuft.
+  function zeigeStufenAufstieg(pegel) {
+    stufeZahlEl.textContent = pegel;
+    stufeBanner.classList.remove('tw-stufe-aktiv');
+    void stufeBanner.offsetWidth; // Reflow erzwingen, damit die Animation neu startet
+    stufeBanner.classList.add('tw-stufe-aktiv');
+    // klick() statt levelAuf(): Letzteres bleibt der Highscore-Fanfare in beenden()
+    // vorbehalten, ein Stufenanstieg hier kann mehrfach pro Runde passieren.
+    audio?.klick?.();
+  }
+
   function aktualisiereHud() {
     timerEl.textContent = formatZeit(ueberlebenszeit);
-    pegelEl.textContent = `Stufe ${schwierigkeitspegel(ueberlebenszeit)}`;
+    const pegel = schwierigkeitspegel(ueberlebenszeit);
+    pegelEl.textContent = `Stufe ${pegel}`;
+    if (pegel > letzterPegel) {
+      letzterPegel = pegel;
+      zeigeStufenAufstieg(pegel);
+    }
     const anteil = Math.min(deckung / VERLUST_SCHWELLE, 1) * 100;
     deckungFuellung.style.width = `${anteil}%`;
     deckungFuellung.classList.toggle('tw-warnung', deckung >= WARN_SCHWELLE && deckung < VERLUST_SCHWELLE);

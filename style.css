@@ -692,6 +692,34 @@ input[type="range"] {
   50% { opacity: 0.55; }
 }
 
+.tw-stufe-banner {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  display: grid;
+  place-content: center;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.tw-stufe-banner.tw-stufe-aktiv {
+  animation: tw-stufe-anflug 1.3s cubic-bezier(0.15, 0.8, 0.3, 1);
+}
+
+.tw-stufe-banner span {
+  font: 900 min(18vw, 110px)/1 inherit;
+  color: var(--aktiv);
+  text-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
+
+@keyframes tw-stufe-anflug {
+  0%   { opacity: 0; transform: scale(0.15); filter: blur(6px); }
+  28%  { opacity: 1; transform: scale(1.1); filter: blur(0); }
+  42%  { transform: scale(1); }
+  78%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+
 .tw-werkzeuge {
   position: fixed;
   bottom: 20px;
