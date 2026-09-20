@@ -10,6 +10,20 @@ export const state = {
   glitzer: false,
   ton: true,
 
+  // Level & Freischaltungen (#12): Lebenslange Summe aus verbrauchter Farbe
+  // (nicht Wasser) — siehe src/sim/splat.js. Das Level selbst wird nie gespeichert,
+  // sondern immer aus dieser Zahl über die Stufentabelle in src/fortschritt.js
+  // hergeleitet, damit sich die Kurve später anpassen lässt, ohne Spielstände zu
+  // migrieren.
+  farbPunkteGesamt: 0,
+
+  // Werkzeug-Einstellungen, die sich freischalten lassen. Multiplikatoren auf die
+  // Werkzeugkonstanten, 1 = heutiges (getuntes) Verhalten.
+  werkzeugEinstellungen: {
+    pinselDicke: 1,
+    ruehrerTempo: 1,
+  },
+
   // Bildschirm-Kalibrierung: wie viele CSS-Pixel sind ein echter Zentimeter,
   // und wie hoch ist die Wanne. Daraus wird jede Werkzeuggröße berechnet.
   cssPxProCm: 37.8,
@@ -29,6 +43,8 @@ export const state = {
           glitzer: this.glitzer,
           ton: this.ton,
           farbe: this.farbe,
+          farbPunkteGesamt: this.farbPunkteGesamt,
+          werkzeugEinstellungen: this.werkzeugEinstellungen,
         })
       );
     } catch {

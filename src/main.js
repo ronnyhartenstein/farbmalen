@@ -14,6 +14,15 @@ import { WERKZEUGE, werkzeugNach, schuetteln } from './tools/index.js';
 import { createToolbar, createRegler } from './ui/toolbar.js';
 import { createPalette } from './ui/palette.js';
 import { createGalerie } from './ui/gallery.js';
+import { createFortschritt } from './ui/fortschritt.js';
+import {
+  levelVon,
+  werkzeugeBisLevel,
+  farbenBisLevel,
+  einstellungenBisLevel,
+  reglerBloeckeBisLevel,
+  STUFEN,
+} from './fortschritt.js';
 
 state.laden();
 
@@ -64,6 +73,27 @@ function los(gl) {
 
   let abklatschAusstehend = false;
 
+  // --- Rückmeldungen ---
+  // Weiter oben als früher: Level & Freischaltungen (#12) brauchen melde()/blitzen()
+  // schon beim Aufbau der Werkzeugleiste/Palette/Regler weiter unten.
+
+  const toast = document.getElementById('toast');
+  let toastTimer = 0;
+  function melde(text) {
+    toast.textContent = text;
+    toast.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toast.hidden = true; }, 1600);
+  }
+
+  const blitzEl = document.getElementById('blitz');
+  function blitzen() {
+    blitzEl.hidden = true;
+    void blitzEl.offsetWidth; // Animation neu starten
+    blitzEl.hidden = false;
+    setTimeout(() => { blitzEl.hidden = true; }, 340);
+  }
+
   const aktionen = {
     beiWechsel: () => audio.klick(),
     abklatsch: () => { audio.aufwecken(); abklatschAusstehend = true; },
@@ -79,9 +109,18 @@ function los(gl) {
     },
   };
 
-  const toolbar = createToolbar(state, aktionen);
-  createRegler(state, aktionen);
-  createPalette(state, aktionen);
+  // Level & Freischaltungen (#12): Werkzeugleiste/Palette zeigen beim Aufbau nur,
+  // was bis zum gespeicherten Level schon freigeschaltet ist — wichtig für
+  // wiederkehrende Spielstände, die schon mittendrin stehen.
+  const startLevel = levelVon(state.farbPunkteGesamt);
+
+  const toolbar = createToolbar(state, aktionen, werkzeugeBisLevel(startLevel));
+  const regler = createRegler(state, aktionen);
+  const palette = createPalette(state, aktionen, farbenBisLevel(startLevel));
+  for (const name of einstellungenBisLevel(startLevel)) regler.zeigeEinstellung(name);
+  for (const id of reglerBloeckeBisLevel(startLevel)) regler.zeigeBlock(id);
+
+  const fortschritt = createFortschritt(state, { melde, blitzen, audio, toolbar, palette, regler });
 
   // --- Tastatur ---
 
@@ -119,25 +158,6 @@ function los(gl) {
     }
   });
 
-  // --- Rückmeldungen ---
-
-  const toast = document.getElementById('toast');
-  let toastTimer = 0;
-  function melde(text) {
-    toast.textContent = text;
-    toast.hidden = false;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => { toast.hidden = true; }, 1600);
-  }
-
-  const blitzEl = document.getElementById('blitz');
-  function blitzen() {
-    blitzEl.hidden = true;
-    void blitzEl.offsetWidth; // Animation neu starten
-    blitzEl.hidden = false;
-    setTimeout(() => { blitzEl.hidden = true; }, 340);
-  }
-
   // --- Ein Willkommensbild, damit die Wanne nicht leer dasteht ---
 
   function willkommen() {
@@ -160,7 +180,21 @@ function los(gl) {
   if (debugAn) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
-    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, galerie, melde };
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, galerie, melde };
+
+    // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
+    // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
+    // Auch per Konsole: farbmalen.fortschritt.testeStufe(3).
+    const stufenBox = document.getElementById('debug-stufen');
+    stufenBox.hidden = false;
+    STUFEN.forEach((stufe, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `Test L${i + 1}`;
+      b.title = stufe.titel;
+      b.addEventListener('click', () => fortschritt.testeStufe(i + 1));
+      stufenBox.appendChild(b);
+    });
   }
 
   let letzte = performance.now();
@@ -192,6 +226,10 @@ function los(gl) {
     }
     werkzeug.tick?.(ctx, dt);
     if (zeiger.losgelassen) werkzeug.onUp?.(ctx);
+
+    // Level & Freischaltungen (#12): direkt nach dem Werkzeug-Tick, damit Punkte aus
+    // diesem Bild sofort zählen.
+    fortschritt.pruefeLevelaufstieg();
 
     fluid.step(dt, state.naesse);
     if (state.glitzer) glitzer.schritt(fluid.velocity, dt);

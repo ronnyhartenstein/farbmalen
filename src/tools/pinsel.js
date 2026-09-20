@@ -18,12 +18,16 @@ export const pinsel = {
     const z = ctx.zeiger;
     if (!z.gedrueckt) return;
 
+    // Freischaltbare Einstellung (#12, ab Level 6): 1 = heutige, getunte Dicke.
+    const dicke = ctx.state.werkzeugEinstellungen?.pinselDicke ?? 1;
+    const spurCm = SPUR_CM * dicke;
+
     const strecke = Math.hypot(z.dx, z.dy);
     const schritt = ctx.state.cmToUv(SCHRITT_CM);
 
     if (strecke < schritt * 0.5) {
       // Stehender Pinsel tropft trotzdem.
-      ctx.pinsel.farbe(z.x, z.y, ctx.cmy, SPUR_CM, STAND_MENGE_PRO_S * dt);
+      ctx.pinsel.farbe(z.x, z.y, ctx.cmy, spurCm, STAND_MENGE_PRO_S * dt);
       return;
     }
 
@@ -34,11 +38,11 @@ export const pinsel = {
         z.px + z.dx * t,
         z.py + z.dy * t,
         ctx.cmy,
-        SPUR_CM,
+        spurCm,
         MENGE_PRO_SCHRITT
       );
     }
-    ctx.pinsel.schub(z.x, z.y, z.dx, z.dy, KRAFT, SPUR_CM * 1.8);
+    ctx.pinsel.schub(z.x, z.y, z.dx, z.dy, KRAFT, spurCm * 1.8);
     ctx.audio?.streichen(strecke, dt);
   },
 };

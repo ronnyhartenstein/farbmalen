@@ -14,8 +14,10 @@ export const ruehrer = {
   tick(ctx, dt) {
     const z = ctx.zeiger;
     if (!z.gedrueckt) return;
+    // Freischaltbare Einstellung (#12, ab Level 7): 1 = heutiges, getuntes Tempo.
+    const tempo = ctx.state.werkzeugEinstellungen?.ruehrerTempo ?? 1;
     const anlauf = Math.min(z.haltezeit / ANLAUF_S, 1);
-    ctx.pinsel.wirbel(z.x, z.y, STAERKE_PRO_S * anlauf * dt, RADIUS_CM);
+    ctx.pinsel.wirbel(z.x, z.y, STAERKE_PRO_S * tempo * anlauf * dt, RADIUS_CM);
     ctx.pinsel.radial(z.x, z.y, -SOG * anlauf * dt, RADIUS_CM);
     ctx.audio?.ruehren(dt);
   },

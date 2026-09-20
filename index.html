@@ -18,11 +18,33 @@
 
   <div class="unten">
     <p id="werkzeughinweis" class="werkzeughinweis"></p>
+    <div id="fortschritt" class="fortschritt" hidden>
+      <div id="fortschritt-fuellung" class="fortschritt-fuellung"></div>
+      <span id="fortschritt-text" class="fortschritt-text"></span>
+    </div>
     <div id="palette" class="palette" role="toolbar" aria-label="Farben"></div>
   </div>
 
   <div id="toast" class="toast" hidden></div>
   <div id="blitz" class="blitz" hidden></div>
+
+  <div id="levelup" class="levelup" hidden>
+    <div class="levelup-karte">
+      <p class="levelup-ueberschrift">
+        <span class="levelup-vor">Level</span>
+        <span class="levelup-zahl" id="levelup-level"></span>
+        <span class="levelup-vor">!</span>
+      </p>
+      <div id="levelup-werkzeug" class="levelup-werkzeug" hidden>
+        <svg id="levelup-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"></svg>
+        <span id="levelup-werkzeugname"></span>
+      </div>
+      <p id="levelup-text" class="levelup-text"></p>
+      <div id="levelup-farben" class="levelup-farben"></div>
+      <button id="levelup-knopf" class="knopf levelup-knopf" type="button"></button>
+    </div>
+  </div>
 
   <div id="galerie" class="galerie" hidden>
     <div class="galerie-kopf">
@@ -38,7 +60,10 @@
     <p id="hinweis-text"></p>
   </div>
 
+  <div id="info-popover" class="info-popover" hidden></div>
+
   <div id="debug" class="debug" hidden></div>
+  <div id="debug-stufen" class="debug-stufen" hidden></div>
 
   <script type="module" src="src/main.js"></script>
 </body>
