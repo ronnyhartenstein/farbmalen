@@ -48,16 +48,22 @@ export function createPinsel(fluid, state) {
   return {
     // Farbe auftragen. radius in cm, amount = Pigmentmenge.
     //
-    // Zählt nebenbei für die Level-Freischaltungen (#12) mit — diese Funktion ist die
-    // einzige Stelle, an der Werkzeuge Farbe auftragen, also erfasst das automatisch
-    // alle acht Werkzeuge. wasser() unten bleibt bewusst unangetastet: Wasser zählt
-    // nicht zum Fortschritt.
-    farbe(x, y, cmy, radiusCm, amount) {
+    // Zählt nebenbei für Level-Freischaltungen (#12) und Abzeichen (#11) mit — diese
+    // Funktion ist die einzige Stelle, an der Werkzeuge Farbe auftragen. wasser()
+    // unten bleibt für #12 bewusst unangetastet: Wasser zählt nicht zum Fortschritt.
+    //
+    // zaehlgewicht (#18): visuelle Menge und gezählte Menge sind absichtlich getrennt.
+    // Der Pinsel trägt beim Ziehen pro Bild mehrere Kleckse auf (bis zu MAX_SCHRITTE),
+    // Gießen dagegen eine feste Rate pro Sekunde — ungewichtet zählte Pinsel dadurch
+    // um ein Vielfaches schneller hoch, obwohl visuell nur mehr Fläche bemalt wird,
+    // nicht mehr "Fortschritt" gemacht wird. Default 1 lässt Gießen (und jedes
+    // künftige Werkzeug) unverändert.
+    farbe(x, y, cmy, radiusCm, amount, zaehlgewicht = 1) {
       const r = state.cmToUv(radiusCm);
       for (const k of kopien(x, y, 0, 0, puffer)) {
         fluid.splatDye(k.x, k.y, cmy, r, amount);
       }
-      state.farbPunkteGesamt += amount;
+      state.farbPunkteGesamt += amount * zaehlgewicht;
     },
 
     // Verdünnen: zieht Pigment heraus.
