@@ -373,6 +373,135 @@ void main() {
   fragColor = vec4(vec3(1.0, 0.96, 0.82) * a, a);
 }`;
 
+// Strömungslabyrinth (#9, Phase 0): wie Glitzer, aber ein einzelnes Partikel mit
+// fester Identität statt Zufalls-Respawn — Prototyp, um zu prüfen, ob sich ein
+// Objekt im Geschwindigkeitsfeld zielgenau steuern lässt (test/stroemungslabyrinth.html).
+export const objektUpdateVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aDir;
+uniform sampler2D uVelocity;
+uniform vec2 uTexel;
+uniform float uDt;
+out vec2 vPos;
+out vec2 vDir;
+
+// Wie schnell sich die sichtbare Ausrichtung höchstens drehen darf (Radiant/s).
+// Ohne Begrenzung dreht sich das Blatt bei kleiner Strömung hektisch hin und
+// her: die Wirbeldämpfung (vorticity confinement, CURL_STAERKE in fluid.js)
+// hält überall leichte Mini-Wirbel am Leben, deren Richtung ständig etwas
+// zittert — normalize() verstärkt jedes Zittern zu vollem Winkel-Jitter.
+// Erste Schätzung (180°-Drehung in ~2.5s), kein gemessener Wert.
+const float MAX_WINKEL_PRO_S = 1.25;
+const float PI = 3.14159265;
+
+void main() {
+  vec2 v = texture(uVelocity, aPos).xy;
+  vec2 p = aPos + v * uTexel * uDt;
+  vPos = clamp(p, vec2(0.0), vec2(1.0));
+
+  // aDir ist die zuletzt gezeichnete (bereits geglättete) Ausrichtung — der
+  // Winkel dreht sich davon aus höchstens um MAX_WINKEL_PRO_S * dt in Richtung
+  // der aktuellen Strömung, nie in einem Sprung.
+  vec2 ziel = length(v) > 1e-8 ? normalize(v) : aDir;
+  vec2 bisher = length(aDir) > 1e-8 ? normalize(aDir) : ziel;
+  float winkelZiel = atan(ziel.y, ziel.x);
+  float winkelBisher = atan(bisher.y, bisher.x);
+  float delta = mod(winkelZiel - winkelBisher + PI, 2.0 * PI) - PI;
+  float maxSchritt = MAX_WINKEL_PRO_S * uDt;
+  delta = clamp(delta, -maxSchritt, maxSchritt);
+  float neuerWinkel = winkelBisher + delta;
+  vDir = vec2(cos(neuerWinkel), sin(neuerWinkel));
+
+  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+}`;
+
+export const objektUpdateFragment = `#version 300 es
+precision highp float;
+out vec4 fragColor;
+void main() { fragColor = vec4(0.0); }`;
+
+export const objektDrawVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aDir;
+uniform float uGroesse;
+out vec2 vDir;
+void main() {
+  gl_Position = vec4(aPos * 2.0 - 1.0, 0.0, 1.0);
+  gl_PointSize = uGroesse;
+  vDir = aDir;
+}`;
+
+// Politur (#9, Phase 5): Eichenblatt-Silhouette statt Platzhalter-Kreis (siehe Idee
+// in #9: "Ein Blatt/Kahn schwimmt im Geschwindigkeitsfeld"). Spindelform (schmal an
+// der Basis, spitz an der Spitze), deren Breite sinusförmig moduliert wird — das
+// ergibt die charakteristischen, gerundeten Lappen und Buchten am Rand — plus ein
+// kurzer Stiel an der Basis und eine dunklere Mittelrippe. Dreht sich mit der
+// Strömungsrichtung (vDir aus objektUpdateVertex) statt eine feste Ausrichtung zu
+// behalten — die Blattspitze zeigt dadurch in Bewegungsrichtung.
+export const objektDrawFragment = `#version 300 es
+precision highp float;
+in vec2 vDir;
+out vec4 fragColor;
+void main() {
+  vec2 p = gl_PointCoord * 2.0 - 1.0;
+  float aa = 0.05;
+
+  // vDir kommt aus dem Geschwindigkeitsfeld (uv-Konvention: +y = Bildschirm-oben).
+  // gl_PointCoord hat dagegen fest +y = Bildschirm-unten (WebGL-Punkt-Sprite-
+  // Konvention, nicht änderbar) — deshalb hier y gespiegelt, sonst zeigt die
+  // Spitze verkehrt herum. Ohne Bewegung (Strömung ~0) bleibt die ursprüngliche,
+  // feste Ausrichtung als Ruhezustand erhalten.
+  vec2 auf = dot(vDir, vDir) > 1e-6 ? normalize(vec2(vDir.x, -vDir.y)) : vec2(0.0, 1.0);
+  vec2 seitlich = vec2(-auf.y, auf.x);
+  vec2 lokal = vec2(dot(p, seitlich), dot(p, auf));
+
+  // t läuft von 0 (Blattbasis) bis 1 (Blattspitze); darunter (lokal.y < blattStart)
+  // sitzt der Stiel.
+  float blattStart = -0.62;
+  float t = clamp((lokal.y - blattStart) / (1.0 - blattStart), 0.0, 1.0);
+  float lappenfaktor = 1.0 + 0.32 * sin(t * 6.0 * 3.14159265);
+  float breite = 0.6 * sin(t * 3.14159265) * lappenfaktor;
+  float blattForm = abs(lokal.x) - breite;
+  float blattKern = clamp(0.5 - blattForm / aa, 0.0, 1.0) * step(blattStart, lokal.y);
+
+  float stielBreite = 0.055;
+  float stielForm = max(abs(lokal.x) - stielBreite, lokal.y - (blattStart + 0.05));
+  float stielKern = clamp(0.5 - stielForm / aa, 0.0, 1.0);
+
+  float kern = max(blattKern, stielKern);
+
+  float rippenbreite = 0.045;
+  float rippenForm = abs(lokal.x) - rippenbreite;
+  float rippenKern = clamp(0.5 - rippenForm / aa, 0.0, 1.0) * blattKern;
+
+  vec3 blattfarbe = vec3(0.86, 0.62, 0.22);
+  vec3 stielfarbe = vec3(0.5, 0.32, 0.1);
+  vec3 farbe = mix(blattfarbe, stielfarbe, max(rippenKern, stielKern));
+  fragColor = vec4(farbe, kern);
+}`;
+
+// Strömungslabyrinth (#9, Phase 1): Objektposition auslesen, ohne die Pipeline
+// abzuwürgen — wie bei der Deckungsmessung unten wird in ein winziges 1×1-
+// RGBA8-Renderziel gerendert (uv-Position kodiert in R/G) statt eine Float-Textur
+// zu lesen (siehe Begründung in src/sim/deckung.js).
+export const objektPositionVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+out vec2 vPos;
+void main() {
+  vPos = aPos;
+  gl_PointSize = 1.0;
+  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+}`;
+
+export const objektPositionFragment = `#version 300 es
+precision highp float;
+in vec2 vPos;
+out vec4 fragColor;
+void main() { fragColor = vec4(vPos, 0.0, 1.0); }`;
+
 // Tintenwächter (#10): Flächenabdeckung messen, ohne die Pipeline abzuwürgen. Statt
 // das volle Dye-Bild zu lesen, wird hier klein gerendert (winziges Renderziel, siehe
 // src/sim/deckung.js) — jeder Ausgabetexel mittelt ein RASTER×RASTER-Raster aus der

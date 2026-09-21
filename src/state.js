@@ -32,6 +32,12 @@ export const state = {
   // losgelöst vom Level-System.
   tintenwaechterBestzeit: 0,
 
+  // Strömungslabyrinth (#9): Bestzeit in Sekunden je Level, nach Level-Id aus
+  // src/labyrinth.js (LEVEL[].id) — nicht nach Index, damit sich die Reihenfolge
+  // später ändern lässt, ohne bestehende Bestzeiten falsch zuzuordnen. Ebenfalls
+  // losgelöst vom Level-System.
+  labyrinthBestzeiten: {},
+
   // Werkzeug-Einstellungen, die sich freischalten lassen. Multiplikatoren auf die
   // Werkzeugkonstanten, 1 = heutiges (getuntes) Verhalten.
   werkzeugEinstellungen: {
@@ -62,6 +68,7 @@ export const state = {
           farbPunkteGesamt: this.farbPunkteGesamt,
           wasserEinheitenGesamt: this.wasserEinheitenGesamt,
           tintenwaechterBestzeit: this.tintenwaechterBestzeit,
+          labyrinthBestzeiten: this.labyrinthBestzeiten,
           werkzeugEinstellungen: this.werkzeugEinstellungen,
         })
       );
