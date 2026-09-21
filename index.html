@@ -114,21 +114,19 @@
   </div>
 
   <div id="labyrinth" class="labyrinth" hidden>
-    <div id="lab-start" class="lab-bildschirm">
+    <div id="lab-auswahl" class="lab-bildschirm">
       <h2>Strömungslabyrinth</h2>
-      <p>Ein Testobjekt schwimmt im Strom. Lenke es mit Rührer, Pusten oder Schaber
-         vom Start- zum Zielmarker.</p>
-      <button id="lab-los" class="knopf levelup-knopf" type="button">Los geht's!</button>
-      <button id="lab-verlassen-start" class="knopf knopf-text" type="button">Zurück zum Malen</button>
+      <p>Lenke das Testobjekt mit Rührer, Pusten oder Schaber vom Start- zum
+         Zielmarker — und weiche Hindernissen und Meiden-Zonen aus.</p>
+      <div id="lab-level-liste" class="lab-level-liste"></div>
+      <button id="lab-verlassen-auswahl" class="knopf knopf-text" type="button">Zurück zum Malen</button>
     </div>
 
     <div id="lab-hud" class="lab-hud" hidden>
       <div class="lab-anzeige">
         <span id="lab-timer" class="lab-timer">0.0s</span>
       </div>
-      <div class="lab-marker lab-marker-start" id="lab-marker-start" data-label="Start"></div>
-      <div class="lab-marker lab-marker-ziel" id="lab-marker-ziel" data-label="Ziel"></div>
-      <div class="lab-marker lab-marker-hindernis" id="lab-marker-hindernis" data-label="Hindernis"></div>
+      <div id="lab-marker-schicht"></div>
       <div class="lab-werkzeuge">
         <button id="lab-ruehrer" class="werkzeug" type="button" aria-pressed="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
@@ -159,6 +157,7 @@
       <h2>Geschafft!</h2>
       <p id="lab-ende-zeit">Geschafft in 0.0s.</p>
       <button id="lab-nochmal" class="knopf levelup-knopf" type="button">Nochmal!</button>
+      <button id="lab-andere-level" class="knopf knopf-text" type="button">Anderes Level</button>
       <button id="lab-verlassen-ende" class="knopf knopf-text" type="button">Zurück zum Malen</button>
     </div>
   </div>

@@ -770,6 +770,23 @@ input[type="range"] {
 .lab-bildschirm h2 { margin: 0; font-size: 32px; color: var(--aktiv); }
 .lab-bildschirm p { margin: 0; max-width: 32em; font-size: 16px; line-height: 1.5; opacity: 0.9; }
 
+.lab-level-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 22em;
+}
+
+.lab-level-knopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.lab-level-bestzeit { opacity: 0.7; font-weight: 400; }
+
 /* --- HUD: soll die Sicht aufs Spielfeld möglichst wenig verstellen --- */
 
 .lab-hud {
@@ -826,6 +843,15 @@ input[type="range"] {
   border: 2px solid rgba(224, 72, 60, 0.75);
 }
 .lab-marker-hindernis::after { color: #e0483c; }
+
+/* Meiden-Zone: schwächer/größer als ein Hindernis, eher Warnung als Sperre
+   (die "Seifen"-Zonen aus der ursprünglichen Idee in #9) — gestrichelt statt
+   solide, damit der Unterschied zum Hindernis auf einen Blick klar ist. */
+.lab-marker-meiden {
+  background: rgba(224, 184, 60, 0.16);
+  border: 2px dashed rgba(224, 184, 60, 0.75);
+}
+.lab-marker-meiden::after { color: #e0b83c; }
 
 .lab-werkzeuge {
   position: fixed;
