@@ -263,7 +263,7 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
     // gedacht (dieselbe Überlegung wie beim dpr-Faktor für glitzer.zeichnen() in
     // main.js, hier lokal statt durchgereicht, da dprGrenze=2 dort nicht exportiert wird).
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    objekt.zeichnen(46 * dpr);
+    objekt.zeichnen(92 * dpr);
   }
 
   return {

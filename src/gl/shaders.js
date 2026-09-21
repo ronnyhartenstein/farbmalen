@@ -405,33 +405,41 @@ void main() {
   gl_PointSize = uGroesse;
 }`;
 
-// Politur (#9, Phase 5): Blatt/Kahn-Silhouette statt Platzhalter-Kreis (siehe Idee
-// in #9: "Ein Blatt/Kahn schwimmt im Geschwindigkeitsfeld"). Die Form ist eine
-// Vesica aus zwei überlappenden Kreisen — an beiden Enden spitz zulaufend, wie ein
-// Blatt oder ein Kahnrumpf von oben — plus eine dunklere Mittelrippe. Bewusst ohne
-// Rotation in Bewegungsrichtung (kein zusätzlicher Readback nötig).
+// Politur (#9, Phase 5): Eichenblatt-Silhouette statt Platzhalter-Kreis (siehe Idee
+// in #9: "Ein Blatt/Kahn schwimmt im Geschwindigkeitsfeld"). Spindelform (schmal an
+// der Basis, spitz an der Spitze), deren Breite sinusförmig moduliert wird — das
+// ergibt die charakteristischen, gerundeten Lappen und Buchten am Rand — plus ein
+// kurzer Stiel an der Basis und eine dunklere Mittelrippe. Bewusst ohne Rotation in
+// Bewegungsrichtung (kein zusätzlicher Readback nötig).
 export const objektDrawFragment = `#version 300 es
 precision highp float;
 out vec4 fragColor;
 void main() {
   vec2 p = gl_PointCoord * 2.0 - 1.0;
-  float aa = 0.08;
+  float aa = 0.05;
 
-  // Vesica aus zwei Kreisen mit vertikal versetzten Mittelpunkten (0, ±c): ihre
-  // Spitzen liegen dadurch SENKRECHT zur Verbindungslinie der Zentren, also auf
-  // der x-Achse (links/rechts) — das ergibt eine breite, horizontal spitz
-  // zulaufende Blattform statt einer schmalen, hochkant stehenden Sichel.
-  float r = 0.92;
-  float c = 0.6;
-  float form = max(length(p - vec2(0.0, c)), length(p - vec2(0.0, -c))) - r;
-  float kern = clamp(0.5 - form / aa, 0.0, 1.0);
+  // t läuft von 0 (Blattbasis) bis 1 (Blattspitze); darunter (p.y < blattStart)
+  // sitzt der Stiel.
+  float blattStart = -0.62;
+  float t = clamp((p.y - blattStart) / (1.0 - blattStart), 0.0, 1.0);
+  float lappenfaktor = 1.0 + 0.32 * sin(t * 6.0 * 3.14159265);
+  float breite = 0.6 * sin(t * 3.14159265) * lappenfaktor;
+  float blattForm = abs(p.x) - breite;
+  float blattKern = clamp(0.5 - blattForm / aa, 0.0, 1.0) * step(blattStart, p.y);
 
-  float rippenbreite = 0.07;
-  float rippe = clamp(0.5 - (abs(p.y) - rippenbreite) / aa, 0.0, 1.0) * kern;
+  float stielBreite = 0.055;
+  float stielForm = max(abs(p.x) - stielBreite, p.y - (blattStart + 0.05));
+  float stielKern = clamp(0.5 - stielForm / aa, 0.0, 1.0);
 
-  vec3 blatt = vec3(0.86, 0.62, 0.22);
-  vec3 rippenfarbe = vec3(0.5, 0.32, 0.1);
-  vec3 farbe = mix(blatt, rippenfarbe, rippe);
+  float kern = max(blattKern, stielKern);
+
+  float rippenbreite = 0.045;
+  float rippenForm = abs(p.x) - rippenbreite;
+  float rippenKern = clamp(0.5 - rippenForm / aa, 0.0, 1.0) * blattKern;
+
+  vec3 blattfarbe = vec3(0.86, 0.62, 0.22);
+  vec3 stielfarbe = vec3(0.5, 0.32, 0.1);
+  vec3 farbe = mix(blattfarbe, stielfarbe, max(rippenKern, stielKern));
   fragColor = vec4(farbe, kern);
 }`;
 
