@@ -391,8 +391,8 @@ out vec2 vDir;
 // her: die Wirbeldämpfung (vorticity confinement, CURL_STAERKE in fluid.js)
 // hält überall leichte Mini-Wirbel am Leben, deren Richtung ständig etwas
 // zittert — normalize() verstärkt jedes Zittern zu vollem Winkel-Jitter.
-// Erste Schätzung (180°-Drehung in ~0.5s), kein gemessener Wert.
-const float MAX_WINKEL_PRO_S = 6.0;
+// Erste Schätzung (180°-Drehung in ~2.5s), kein gemessener Wert.
+const float MAX_WINKEL_PRO_S = 1.25;
 const float PI = 3.14159265;
 
 void main() {
