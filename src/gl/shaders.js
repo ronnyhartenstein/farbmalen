@@ -417,6 +417,26 @@ void main() {
   fragColor = vec4(farbe, kern);
 }`;
 
+// Strömungslabyrinth (#9, Phase 1): Objektposition auslesen, ohne die Pipeline
+// abzuwürgen — wie bei der Deckungsmessung unten wird in ein winziges 1×1-
+// RGBA8-Renderziel gerendert (uv-Position kodiert in R/G) statt eine Float-Textur
+// zu lesen (siehe Begründung in src/sim/deckung.js).
+export const objektPositionVertex = `#version 300 es
+precision highp float;
+layout(location = 0) in vec2 aPos;
+out vec2 vPos;
+void main() {
+  vPos = aPos;
+  gl_PointSize = 1.0;
+  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+}`;
+
+export const objektPositionFragment = `#version 300 es
+precision highp float;
+in vec2 vPos;
+out vec4 fragColor;
+void main() { fragColor = vec4(vPos, 0.0, 1.0); }`;
+
 // Tintenwächter (#10): Flächenabdeckung messen, ohne die Pipeline abzuwürgen. Statt
 // das volle Dye-Bild zu lesen, wird hier klein gerendert (winziges Renderziel, siehe
 // src/sim/deckung.js) — jeder Ausgabetexel mittelt ein RASTER×RASTER-Raster aus der

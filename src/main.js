@@ -18,6 +18,7 @@ import { createFortschritt } from './ui/fortschritt.js';
 import { createAbzeichenUI } from './ui/abzeichen.js';
 import { FARBE_ABZEICHEN, WASSER_ABZEICHEN } from './abzeichen.js';
 import { createTintenwaechter } from './ui/tintenwaechter.js';
+import { createStroemungslabyrinth } from './ui/labyrinth.js';
 import {
   levelVon,
   werkzeugeBisLevel,
@@ -81,6 +82,10 @@ function los(gl) {
   // index.html), kann also schon vor dem Reglerblock entstehen.
   const tintenwaechter = createTintenwaechter(gl, blit, presenter, zeiger, state, { audio });
 
+  // Strömungslabyrinth (#9, Phase 1): wie Tintenwächter ein eigener, unabhängiger
+  // Modus mit eigener zweiter Fluidsimulation — noch ohne Hindernisse/Level.
+  const labyrinth = createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { audio });
+
   // --- Rückmeldungen ---
   // Weiter oben als früher: Level & Freischaltungen (#12) brauchen melde()/blitzen()
   // schon beim Aufbau der Werkzeugleiste/Palette/Regler weiter unten.
@@ -108,6 +113,7 @@ function los(gl) {
     galerie: () => (galerie.offen ? galerie.schliessen() : galerie.oeffnen()),
     abzeichen: () => (abzeichenUI.offen ? abzeichenUI.schliessen() : abzeichenUI.oeffnen()),
     tintenwaechter: () => tintenwaechter.betreten(),
+    labyrinth: () => labyrinth.betreten(),
     neuesBlatt: () => {
       if (!confirm('Alles wegwischen und neu anfangen?')) return;
       fluid.neuesBlatt();
@@ -148,6 +154,15 @@ function los(gl) {
       if (taste === 'escape') document.getElementById('tw-aufhoeren')?.click();
       else if (ev.key === '1') document.getElementById('tw-wasser')?.click();
       else if (ev.key === '2') document.getElementById('tw-schaber')?.click();
+      return;
+    }
+
+    // Strömungslabyrinth (#9) hat ebenfalls eine eigene, kleine Tastenbelegung.
+    if (labyrinth.aktiv) {
+      if (taste === 'escape') document.getElementById('lab-aufhoeren')?.click();
+      else if (ev.key === '1') document.getElementById('lab-ruehrer')?.click();
+      else if (ev.key === '2') document.getElementById('lab-pusten')?.click();
+      else if (ev.key === '3') document.getElementById('lab-schaber')?.click();
       return;
     }
 
@@ -201,7 +216,7 @@ function los(gl) {
   if (debugAn) {
     debugEl.hidden = false;
     // Innenleben zum Nachmessen und für skriptgesteuerte Tests.
-    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, tintenwaechter, galerie, melde };
+    window.farbmalen = { fluid, pinsel, state, canvas, toolbar, palette, regler, fortschritt, abzeichenUI, tintenwaechter, labyrinth, galerie, melde };
 
     // Ein Knopf pro Stufe, um wirklich dorthin zu springen (echte Punkte, echte
     // Freischaltung beim Klick auf "Wohoo!") — ohne dafür wirklich malen zu müssen.
@@ -256,7 +271,10 @@ function los(gl) {
     // etwa wenn der Tab im Hintergrund war.
     const dt = Math.min(Math.max(roh, 1 / 240), 1 / 60);
 
-    if (passeGroesseAn(fluid)) tintenwaechter.resize();
+    if (passeGroesseAn(fluid)) {
+      tintenwaechter.resize();
+      labyrinth.resize();
+    }
 
     eingabe.frameBeginn(dt);
 
@@ -266,6 +284,10 @@ function los(gl) {
       // beim Zurückkommen exakt so stehen, wie es war.
       tintenwaechter.tick(dt);
       tintenwaechter.render();
+    } else if (labyrinth.laeuft) {
+      // Strömungslabyrinth (#9): gleiches Prinzip, eigener, unabhängiger Modus.
+      labyrinth.tick(dt);
+      labyrinth.render();
     } else {
       const werkzeug = werkzeugNach(state.werkzeug);
 

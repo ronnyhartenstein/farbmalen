@@ -4,11 +4,15 @@
 // Steuerbarkeit (test/stroemungslabyrinth.html), kein Bestandteil des freien Malens.
 
 import { Program } from '../gl/program.js';
+import { createFBO } from '../gl/fbo.js';
 import * as S from '../gl/shaders.js';
 
 export function createObjekt(gl, startX = 0.5, startY = 0.5) {
   const progSchritt = new Program(gl, S.objektUpdateVertex, S.objektUpdateFragment, ['vPos']);
   const progZeichnen = new Program(gl, S.objektDrawVertex, S.objektDrawFragment);
+  const progPosition = new Program(gl, S.objektPositionVertex, S.objektPositionFragment);
+  const posZiel = createFBO(gl, 1, 1, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.NEAREST);
+  const posPixel = new Uint8Array(4);
 
   const posPuffer = [gl.createBuffer(), gl.createBuffer()];
   const vaos = [gl.createVertexArray(), gl.createVertexArray()];
@@ -74,6 +78,21 @@ export function createObjekt(gl, startX = 0.5, startY = 0.5) {
     reset(x = startX, y = startY) {
       fuellen(x, y);
       aktuell = 0;
+    },
+
+    // Aktuelle Position von der GPU lesen — für Ziel-/Kollisionserkennung. Wie bei
+    // src/sim/deckung.js entscheidet die aufrufende Stelle über die Häufigkeit
+    // (nicht jedes Bild nötig), hier wird nur der eigentliche Lesevorgang gekapselt.
+    position() {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, posZiel.fbo);
+      gl.viewport(0, 0, 1, 1);
+      progPosition.bind();
+      gl.bindVertexArray(vaos[aktuell]);
+      gl.drawArrays(gl.POINTS, 0, 1);
+      gl.bindVertexArray(null);
+      gl.readPixels(0, 0, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, posPixel);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      return { x: posPixel[0] / 255, y: posPixel[1] / 255 };
     },
   };
 }

@@ -113,6 +113,55 @@
     </div>
   </div>
 
+  <div id="labyrinth" class="labyrinth" hidden>
+    <div id="lab-start" class="lab-bildschirm">
+      <h2>Strömungslabyrinth</h2>
+      <p>Ein Testobjekt schwimmt im Strom. Lenke es mit Rührer, Pusten oder Schaber
+         vom Start- zum Zielmarker.</p>
+      <button id="lab-los" class="knopf levelup-knopf" type="button">Los geht's!</button>
+      <button id="lab-verlassen-start" class="knopf knopf-text" type="button">Zurück zum Malen</button>
+    </div>
+
+    <div id="lab-hud" class="lab-hud" hidden>
+      <div class="lab-anzeige">
+        <span id="lab-timer" class="lab-timer">0.0s</span>
+      </div>
+      <div class="lab-marker lab-marker-start" id="lab-marker-start" data-label="Start"></div>
+      <div class="lab-marker lab-marker-ziel" id="lab-marker-ziel" data-label="Ziel"></div>
+      <div class="lab-werkzeuge">
+        <button id="lab-ruehrer" class="werkzeug" type="button" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M20.5 12a8.5 8.5 0 1 1-3.2-6.6"/><path d="M20.5 3.8v5.2h-5.2"/><circle cx="12" cy="12" r="1.6"/>
+          </svg>
+          <span>Rührer</span>
+        </button>
+        <button id="lab-pusten" class="werkzeug" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3 8.5h9.5a3 3 0 1 0-3-3"/><path d="M3 13.5h12.5a3 3 0 1 1-3 3"/><path d="M3 18.5h6"/>
+          </svg>
+          <span>Pusten</span>
+        </button>
+        <button id="lab-schaber" class="werkzeug" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 15.5h11.5l4.5-9H8z"/><path d="M3.5 19.5h17"/>
+          </svg>
+          <span>Schaber</span>
+        </button>
+      </div>
+      <button id="lab-aufhoeren" class="knopf knopf-text lab-aufhoeren" type="button">Aufhören</button>
+    </div>
+
+    <div id="lab-ende" class="lab-bildschirm" hidden>
+      <h2>Geschafft!</h2>
+      <p id="lab-ende-zeit">Geschafft in 0.0s.</p>
+      <button id="lab-nochmal" class="knopf levelup-knopf" type="button">Nochmal!</button>
+      <button id="lab-verlassen-ende" class="knopf knopf-text" type="button">Zurück zum Malen</button>
+    </div>
+  </div>
+
   <div id="galerie" class="galerie" hidden>
     <div class="galerie-kopf">
       <h2>Deine Abklatsche</h2>

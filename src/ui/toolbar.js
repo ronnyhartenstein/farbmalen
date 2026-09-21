@@ -143,6 +143,7 @@ export function createRegler(state, aktionen) {
     </div>
 
     <button id="r-tintenwaechter" class="knopf knopf-breit" type="button">Tintenwächter</button>
+    <button id="r-labyrinth" class="knopf knopf-breit" type="button">Strömungslabyrinth</button>
 
     <button id="r-neu" class="knopf knopf-breit" type="button">Neues Blatt</button>
     <button id="r-vollbild" class="knopf knopf-breit" type="button">Vollbild</button>
@@ -251,6 +252,7 @@ export function createRegler(state, aktionen) {
   box.querySelector('#r-galerie').addEventListener('click', () => aktionen.galerie?.());
   box.querySelector('#r-abzeichen').addEventListener('click', () => aktionen.abzeichen?.());
   box.querySelector('#r-tintenwaechter').addEventListener('click', () => aktionen.tintenwaechter?.());
+  box.querySelector('#r-labyrinth').addEventListener('click', () => aktionen.labyrinth?.());
   box.querySelector('#r-neu').addEventListener('click', () => aktionen.neuesBlatt?.());
   box.querySelector('#r-vollbild').addEventListener('click', () => aktionen.vollbild?.());
 

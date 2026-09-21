@@ -741,6 +741,104 @@ input[type="range"] {
   pointer-events: auto;
 }
 
+/* --- Strömungslabyrinth (#9), Phase 1 --- */
+
+.labyrinth {
+  position: fixed;
+  inset: 0;
+  z-index: 15; /* unter Toast/Popups, über der Wanne */
+  pointer-events: none; /* die Wanne bleibt bedienbar, nur die Kind-Elemente fangen Klicks */
+}
+
+.lab-bildschirm {
+  position: fixed;
+  inset: 0;
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 32px;
+  text-align: center;
+  background: rgba(20, 14, 20, 0.88);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+  animation: levelup-auftauchen 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.lab-bildschirm h2 { margin: 0; font-size: 32px; color: var(--aktiv); }
+.lab-bildschirm p { margin: 0; max-width: 32em; font-size: 16px; line-height: 1.5; opacity: 0.9; }
+
+/* --- HUD: soll die Sicht aufs Spielfeld möglichst wenig verstellen --- */
+
+.lab-hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lab-anzeige {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(20, 14, 20, 0.7);
+  backdrop-filter: blur(6px);
+}
+
+.lab-timer {
+  font: 800 20px/1 inherit;
+  color: var(--schrift);
+}
+
+.lab-marker {
+  position: fixed;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.lab-marker::after {
+  content: attr(data-label);
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.lab-marker-start { border: 2px dashed #6ea1ff; }
+.lab-marker-start::after { color: #6ea1ff; }
+.lab-marker-ziel { border: 2px dashed #4caf6a; }
+.lab-marker-ziel::after { color: #4caf6a; }
+
+.lab-werkzeuge {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 22px;
+  background: rgba(20, 14, 20, 0.7);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.lab-aufhoeren {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  pointer-events: auto;
+}
+
 @media (max-width: 900px) {
   .regler { width: 158px; padding: 11px; }
   .werkzeug { width: 56px; }
