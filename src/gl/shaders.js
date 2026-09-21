@@ -405,15 +405,29 @@ void main() {
   gl_PointSize = uGroesse;
 }`;
 
+// Politur (#9, Phase 5): Blatt/Kahn-Silhouette statt Platzhalter-Kreis (siehe Idee
+// in #9: "Ein Blatt/Kahn schwimmt im Geschwindigkeitsfeld"). Die Form ist eine
+// Vesica aus zwei überlappenden Kreisen — an beiden Enden spitz zulaufend, wie ein
+// Blatt oder ein Kahnrumpf von oben — plus eine dunklere Mittelrippe. Bewusst ohne
+// Rotation in Bewegungsrichtung (kein zusätzlicher Readback nötig).
 export const objektDrawFragment = `#version 300 es
 precision highp float;
 out vec4 fragColor;
 void main() {
   vec2 p = gl_PointCoord * 2.0 - 1.0;
-  float d = length(p);
-  float kern = smoothstep(1.0, 0.72, d);
-  float ring = smoothstep(0.78, 0.64, d) - smoothstep(0.64, 0.5, d);
-  vec3 farbe = mix(vec3(0.86, 0.22, 0.16), vec3(1.0, 0.96, 0.9), ring);
+  float aa = 0.08;
+
+  float r = 0.92;
+  float c = 0.6;
+  float form = max(length(p - vec2(c, 0.0)), length(p - vec2(-c, 0.0))) - r;
+  float kern = clamp(0.5 - form / aa, 0.0, 1.0);
+
+  float rippenbreite = 0.07;
+  float rippe = clamp(0.5 - (abs(p.y) - rippenbreite) / aa, 0.0, 1.0) * kern;
+
+  vec3 blatt = vec3(0.86, 0.62, 0.22);
+  vec3 rippenfarbe = vec3(0.5, 0.32, 0.1);
+  vec3 farbe = mix(blatt, rippenfarbe, rippe);
   fragColor = vec4(farbe, kern);
 }`;
 

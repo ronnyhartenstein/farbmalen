@@ -133,6 +133,37 @@ reales, regelmäßiges Ergebnis, auch bei aktiver, beidhändiger Abwehr — kein
 der sich auf Dauer halten lässt. Nachschubtempo, Rampe und Verlustschwelle stehen in
 `src/tintenwaechter.js`, kalibriert über `test/tintenwaechter.html` (siehe unten).
 
+## Strömungslabyrinth
+
+Ein zweiter eigener Arcade-Modus, ebenfalls losgelöst vom Level-System: Knopf
+„Strömungslabyrinth" im Reglerblock. Zweckentfremdet dieselbe Strömungssimulation
+für ein Steuerungsrätsel: Ein Testobjekt (Blatt/Kahn-Silhouette) schwimmt im
+Geschwindigkeitsfeld und muss mit Rührer, Pusten oder Schaber — Strömung statt
+Farbe — vom Start- zum Zielmarker gelenkt werden, an Hindernissen und Meiden-Zonen
+vorbei. Levelauswahl mit drei Leveln, je eigene, dauerhaft gespeicherte Bestzeit.
+
+Technisch wie Tintenwächter ein zweiter, unabhängiger Simulationslauf. Das
+Testobjekt ist ein Ein-Partikel-Sonderfall der Glitzer-Technik (`src/sim/glitter.js`,
+Transform Feedback) ohne Zufalls-Respawn (`src/sim/objekt.js`) — eine feste Identität
+statt 2200 zufällig respawnender Punkte. Für die Zielerkennung braucht es als
+einzige Stelle im Projekt neben der Tintenwächter-Deckungsmessung ein echtes
+GPU→CPU-Auslesen, aber genauso winzig: ein 1×1-Renderziel statt eines `readPixels`
+auf dem vollen Bild.
+
+Hindernisse und die selteneren Meiden-Zonen sind beide dieselbe Technik: eine
+dauerhafte, weiche Radial-Abstoßung statt einer harten Wand im Strömungslöser —
+ein manueller Test hat bestätigt, dass sich das Objekt glaubwürdig nicht
+durchdrücken lässt, ganz ohne Eingriff in die Kern-Shader. Level, Hindernisse und
+Meiden-Zonen stehen in `src/labyrinth.js`; anders als beim Tintenwächter bislang
+Handarbeit statt über eine eigene Kalibrierungsseite gemessen. Ein Hauch Farbe
+kommt trotzdem vor: jedes Werkzeug hinterlässt eine schwach eingefärbte, schnell
+zerlaufende Spur — kein echtes Malen, nur ein visuelles Echo der Strömung.
+
+Vor dem fertigen Modus stand ein isolierter Prototyp ohne Level oder Hindernisse
+(`test/stroemungslabyrinth.html`, siehe Prüfseiten unten) — damit wurde geprüft,
+ob sich die absichtlich träge, aufs Marmorieren ausgelegte Strömung überhaupt
+zielgenau steuern lässt, bevor Level-Infrastruktur entstand.
+
 ## Aufbau
 
 ```
@@ -141,13 +172,15 @@ src/gl/               WebGL-Unterbau: Kontext, Shader, Renderziele
 src/sim/fluid.js      Der Simulationsschritt
 src/sim/splat.js      Einzige Stelle, an der Werkzeuge die Simulation berühren (inkl. Spiegelmodus)
 src/sim/glitter.js    Glitzerpartikel per Transform Feedback
+src/sim/objekt.js     Testobjekt fürs Strömungslabyrinth (wie Glitzer, aber ohne Respawn)
 src/sim/deckung.js    Flächenabdeckung messen (Downsample-Pass für Tintenwächter)
 src/render/present.js Pigment → Licht, Papier, nasser Glanz
 src/tools/            Ein Werkzeug = eine Datei mit onDown/tick/onUp
 src/fortschritt.js    Stufentabelle: was ab welchem Level frei ist
 src/abzeichen.js      Mengen-Stufen für die Abzeichen-Trophäen
 src/tintenwaechter.js Quellen, Schwierigkeitskurve, Schwellen für den Arcade-Modus
-src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken, Abzeichen, Tintenwächter
+src/labyrinth.js      Level, Hindernisse, Meiden-Zonen fürs Strömungslabyrinth
+src/ui/               Werkzeugleiste, Farbpalette, Galerie, Fortschrittsbalken, Abzeichen, Tintenwächter, Strömungslabyrinth
 src/audio/sfx.js      Töne, komplett synthetisch (keine Audio-Dateien)
 test/                 Prüfseiten, siehe unten
 ```
@@ -171,9 +204,12 @@ Im Browser aufrufen (Server muss laufen), die Ergebnisse stehen als Text auf der
 | `test/fortschritt.html` | Nach wie vielen Sekunden welches Level fällt, für verschiedene Spielweisen — Grundlage der Stufentabelle |
 | `test/abzeichen.html` | Nach wie viel aktiver Spielzeit welches Abzeichen fällt — Grundlage der Mengen-Stufen |
 | `test/tintenwaechter.html` | Wie lange verschiedene Abwehr-Fertigkeitsstufen im Tintenwächter durchhalten — Grundlage der Schwierigkeitskurve |
+| `test/stroemungslabyrinth.html` | Ob sich ein Objekt im Geschwindigkeitsfeld überhaupt zielgenau steuern lässt — isolierter Prototyp vor dem eigentlichen Strömungslabyrinth-Modus |
 
-Die Seiten takten die Simulation selbst, statt auf `requestAnimationFrame` zu warten —
-so laufen sie auch in einem headless gestarteten Browser durch.
+Die Kalibrierungsseiten takten die Simulation selbst, statt auf `requestAnimationFrame`
+zu warten — so laufen sie auch in einem headless gestarteten Browser durch.
+`test/stroemungslabyrinth.html` ist die Ausnahme: eine interaktive Seite zum echten
+Ausprobieren mit der Maus, keine automatisierte Messung.
 
 ## Voraussetzungen
 

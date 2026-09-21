@@ -14,10 +14,21 @@ import { createObjekt } from '../sim/objekt.js';
 import { ruehrer } from '../tools/ruehrer.js';
 import { pusten } from '../tools/pusten.js';
 import { schaber } from '../tools/schaber.js';
+import { hexZuPigment } from '../palette.js';
 import { LEVEL, amZiel } from '../labyrinth.js';
 
 const WERKZEUGE = { ruehrer, pusten, schaber };
 const SCHABER_FAKTOR = 0.4;
+
+// Politur (#9, Phase 5): eine leichte, schnell zerlaufende Farbspur zeigt, wo
+// gerade in die Strömung eingegriffen wird — kein Malen, nur ein Hauch Farbe.
+// Kleine Menge + spürbare Nässe statt der 0 aus Phase 1–4, damit sich die Wanne
+// über eine Runde nicht zu einem vollen Bild aufsummiert, sondern die Spur
+// tatsächlich wieder verblasst.
+const SPUR_FARBE = hexZuPigment('#16b8b8'); // Türkis wie in der Palette — Wasser-Assoziation
+const SPUR_RADIUS_CM = 1.1;
+const SPUR_MENGE_PRO_S = 0.35;
+const WETNESS = 0.22;
 
 // Zielerreichung nicht jedes Bild neu messen — der Lesevorgang ist zwar winzig
 // (1×1-readPixels, siehe src/sim/objekt.js), aber trotzdem unnötig oft.
@@ -49,7 +60,10 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
   // Eigene, zweite Fluidsimulation — bleibt über mehrere Runden bestehen (nur
   // fluid.neuesBlatt() bei jedem Neustart).
   const labFluid = createFluid(gl, blit);
-  const labState = { symmetrie: 1, cmToUv: (cm) => state.cmToUv(cm) };
+  // farbPunkteGesamt: nur damit basisPinsel.farbe() (Farbspur unten) nicht auf
+  // einer undefined-Eigenschaft aufaddiert — zählt für nichts, labState ist von
+  // der echten Level-/Fortschritts-Zählung komplett getrennt.
+  const labState = { symmetrie: 1, farbPunkteGesamt: 0, cmToUv: (cm) => state.cmToUv(cm) };
   const basisPinsel = createPinsel(labFluid, labState);
   const objekt = createObjekt(gl, 0.5, 0.5);
 
@@ -226,9 +240,11 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
     if (zeiger.gedrueckt) {
       const ctx = { pinsel: labPinsel, zeiger, state: labState, audio };
       WERKZEUGE[werkzeugName].tick?.(ctx, dt);
+      // Leichte Farbspur (siehe Konstanten oben) — rein optisch, zählt nirgendwo mit.
+      basisPinsel.farbe(zeiger.x, zeiger.y, SPUR_FARBE, SPUR_RADIUS_CM, SPUR_MENGE_PRO_S * dt);
     }
 
-    labFluid.step(dt, 0);
+    labFluid.step(dt, WETNESS);
     objekt.schritt(labFluid.velocity, dt);
 
     bildZaehler++;
