@@ -818,6 +818,15 @@ input[type="range"] {
 .lab-marker-ziel { border: 2px dashed #4caf6a; }
 .lab-marker-ziel::after { color: #4caf6a; }
 
+/* Solide statt gestrichelt: anders als Start/Ziel eine "Wand", kein Wegpunkt.
+   Größe wird per JS gesetzt (src/ui/labyrinth.js), damit sie zum tatsächlichen
+   Abstoßungsradius passt — die Basiswerte oben dienen nur als Fallback. */
+.lab-marker-hindernis {
+  background: rgba(224, 72, 60, 0.28);
+  border: 2px solid rgba(224, 72, 60, 0.75);
+}
+.lab-marker-hindernis::after { color: #e0483c; }
+
 .lab-werkzeuge {
   position: fixed;
   bottom: 20px;

@@ -15,7 +15,7 @@ import { createObjekt } from '../sim/objekt.js';
 import { ruehrer } from '../tools/ruehrer.js';
 import { pusten } from '../tools/pusten.js';
 import { schaber } from '../tools/schaber.js';
-import { START, ZIEL, amZiel } from '../labyrinth.js';
+import { START, ZIEL, HINDERNIS, amZiel } from '../labyrinth.js';
 
 const WERKZEUGE = { ruehrer, pusten, schaber };
 const SCHABER_FAKTOR = 0.4;
@@ -37,8 +37,8 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
     schaber: document.getElementById('lab-schaber'),
   };
 
-  // Start-/Zielmarker sind reine Deko (siehe style.css) — feste Position, solange
-  // es noch kein Levelformat gibt (Phase 4 im Plan).
+  // Start-/Ziel-/Hindernismarker sind reine Deko (siehe style.css) — feste
+  // Position, solange es noch kein Levelformat gibt (Phase 4 im Plan).
   function setzeMarker(id, punkt) {
     const el = document.getElementById(id);
     if (!el) return;
@@ -47,6 +47,23 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
   }
   setzeMarker('lab-marker-start', START);
   setzeMarker('lab-marker-ziel', ZIEL);
+  setzeMarker('lab-marker-hindernis', HINDERNIS);
+
+  // Hindernis-Durchmesser in echten cm (wie jede Werkzeuggröße im Projekt) — anders
+  // als bei den Werkzeugen aber rein zur Anzeige, nicht Eingabe an die Simulation
+  // (die Abstoßung selbst nutzt state.cmToUv() direkt in tick() unten). cssPxProCm
+  // ist bereits "wie viele CSS-Pixel sind 1 cm", also reicht das ohne Umweg über
+  // die Bildschirmhöhe.
+  function skaliereHindernisMarker() {
+    const el = document.getElementById('lab-marker-hindernis');
+    if (!el) return;
+    const durchmesser = 2 * HINDERNIS.radiusCm * state.cssPxProCm;
+    el.style.width = `${durchmesser}px`;
+    el.style.height = `${durchmesser}px`;
+    el.style.marginLeft = `${-durchmesser / 2}px`;
+    el.style.marginTop = `${-durchmesser / 2}px`;
+  }
+  skaliereHindernisMarker();
 
   // Die freie Werkzeugleiste/Palette/Regler bleiben sonst sichtbar und klickbar
   // unter dem HUD — analog src/ui/tintenwaechter.js.
@@ -147,6 +164,11 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
     if (!laeuft) return;
     zeit += dt;
 
+    // Phase 2 (#9): Hindernis als weiche, dauerhafte Radial-Abstoßung statt einer
+    // harten Solver-Wand — läuft unabhängig davon, welches Werkzeug gerade
+    // gedrückt ist, wie die Tinten-Quellen bei src/ui/tintenwaechter.js.
+    basisPinsel.radial(HINDERNIS.x, HINDERNIS.y, HINDERNIS.staerke * dt, HINDERNIS.radiusCm);
+
     if (zeiger.gedrueckt) {
       const ctx = { pinsel: labPinsel, zeiger, state: labState, audio };
       WERKZEUGE[werkzeugName].tick?.(ctx, dt);
@@ -178,7 +200,10 @@ export function createStroemungslabyrinth(gl, blit, presenter, zeiger, state, { 
     betreten,
     tick,
     render,
-    resize: () => labFluid.resize(),
+    resize: () => {
+      labFluid.resize();
+      skaliereHindernisMarker();
+    },
     get aktiv() {
       return aktiv;
     },
