@@ -379,19 +379,40 @@ void main() {
 export const objektUpdateVertex = `#version 300 es
 precision highp float;
 layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aDir;
 uniform sampler2D uVelocity;
 uniform vec2 uTexel;
 uniform float uDt;
 out vec2 vPos;
 out vec2 vDir;
 
+// Wie schnell sich die sichtbare Ausrichtung höchstens drehen darf (Radiant/s).
+// Ohne Begrenzung dreht sich das Blatt bei kleiner Strömung hektisch hin und
+// her: die Wirbeldämpfung (vorticity confinement, CURL_STAERKE in fluid.js)
+// hält überall leichte Mini-Wirbel am Leben, deren Richtung ständig etwas
+// zittert — normalize() verstärkt jedes Zittern zu vollem Winkel-Jitter.
+// Erste Schätzung (180°-Drehung in ~0.5s), kein gemessener Wert.
+const float MAX_WINKEL_PRO_S = 6.0;
+const float PI = 3.14159265;
+
 void main() {
   vec2 v = texture(uVelocity, aPos).xy;
   vec2 p = aPos + v * uTexel * uDt;
   vPos = clamp(p, vec2(0.0), vec2(1.0));
-  // Rohe Strömungsrichtung am aktuellen Punkt, unskaliert — wird nur fürs Drehen
-  // des Sprites gebraucht (objektDrawVertex/Fragment), dort erst normalisiert.
-  vDir = v;
+
+  // aDir ist die zuletzt gezeichnete (bereits geglättete) Ausrichtung — der
+  // Winkel dreht sich davon aus höchstens um MAX_WINKEL_PRO_S * dt in Richtung
+  // der aktuellen Strömung, nie in einem Sprung.
+  vec2 ziel = length(v) > 1e-8 ? normalize(v) : aDir;
+  vec2 bisher = length(aDir) > 1e-8 ? normalize(aDir) : ziel;
+  float winkelZiel = atan(ziel.y, ziel.x);
+  float winkelBisher = atan(bisher.y, bisher.x);
+  float delta = mod(winkelZiel - winkelBisher + PI, 2.0 * PI) - PI;
+  float maxSchritt = MAX_WINKEL_PRO_S * uDt;
+  delta = clamp(delta, -maxSchritt, maxSchritt);
+  float neuerWinkel = winkelBisher + delta;
+  vDir = vec2(cos(neuerWinkel), sin(neuerWinkel));
+
   gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
 }`;
 
