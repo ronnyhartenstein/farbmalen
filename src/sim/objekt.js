@@ -8,13 +8,17 @@ import { createFBO } from '../gl/fbo.js';
 import * as S from '../gl/shaders.js';
 
 export function createObjekt(gl, startX = 0.5, startY = 0.5) {
-  const progSchritt = new Program(gl, S.objektUpdateVertex, S.objektUpdateFragment, ['vPos']);
+  // vDir wird zusätzlich zur Position per Transform Feedback mitgeschrieben — nur
+  // fürs Drehen des Sprites in Bewegungsrichtung (objektDrawVertex/Fragment),
+  // ping-ponged genau wie die Position selbst (siehe dirPuffer unten).
+  const progSchritt = new Program(gl, S.objektUpdateVertex, S.objektUpdateFragment, ['vPos', 'vDir']);
   const progZeichnen = new Program(gl, S.objektDrawVertex, S.objektDrawFragment);
   const progPosition = new Program(gl, S.objektPositionVertex, S.objektPositionFragment);
   const posZiel = createFBO(gl, 1, 1, gl.RGBA8, gl.RGBA, gl.UNSIGNED_BYTE, gl.NEAREST);
   const posPixel = new Uint8Array(4);
 
   const posPuffer = [gl.createBuffer(), gl.createBuffer()];
+  const dirPuffer = [gl.createBuffer(), gl.createBuffer()];
   const vaos = [gl.createVertexArray(), gl.createVertexArray()];
 
   function fuellen(x, y) {
@@ -27,11 +31,26 @@ export function createObjekt(gl, startX = 0.5, startY = 0.5) {
   }
   fuellen(startX, startY);
 
+  // Startrichtung (0,0) — der Fragment-Shader erkennt das und fällt auf eine feste
+  // Ruhe-Ausrichtung zurück, statt durch normalize(0,0) NaN zu erzeugen.
+  function fuellenRichtung() {
+    const daten = new Float32Array([0, 0]);
+    for (let i = 0; i < 2; i++) {
+      gl.bindBuffer(gl.ARRAY_BUFFER, dirPuffer[i]);
+      gl.bufferData(gl.ARRAY_BUFFER, daten, gl.DYNAMIC_COPY);
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+  }
+  fuellenRichtung();
+
   for (let i = 0; i < 2; i++) {
     gl.bindVertexArray(vaos[i]);
     gl.bindBuffer(gl.ARRAY_BUFFER, posPuffer[i]);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, dirPuffer[i]);
+    gl.vertexAttribPointer(1, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(1);
   }
   gl.bindVertexArray(null);
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
@@ -52,10 +71,12 @@ export function createObjekt(gl, startX = 0.5, startY = 0.5) {
       gl.bindVertexArray(vaos[aktuell]);
       gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, tf);
       gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, posPuffer[1 - aktuell]);
+      gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 1, dirPuffer[1 - aktuell]);
       gl.beginTransformFeedback(gl.POINTS);
       gl.drawArrays(gl.POINTS, 0, 1);
       gl.endTransformFeedback();
       gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 0, null);
+      gl.bindBufferBase(gl.TRANSFORM_FEEDBACK_BUFFER, 1, null);
       gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, null);
       gl.bindVertexArray(null);
       gl.disable(gl.RASTERIZER_DISCARD);
@@ -83,6 +104,7 @@ export function createObjekt(gl, startX = 0.5, startY = 0.5) {
     // Zurück auf eine feste Position setzen, ohne die Puffer neu anzulegen.
     reset(x = startX, y = startY) {
       fuellen(x, y);
+      fuellenRichtung();
       aktuell = 0;
     },
 
