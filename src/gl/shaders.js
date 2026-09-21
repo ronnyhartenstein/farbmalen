@@ -417,9 +417,13 @@ void main() {
   vec2 p = gl_PointCoord * 2.0 - 1.0;
   float aa = 0.08;
 
+  // Vesica aus zwei Kreisen mit vertikal versetzten Mittelpunkten (0, ±c): ihre
+  // Spitzen liegen dadurch SENKRECHT zur Verbindungslinie der Zentren, also auf
+  // der x-Achse (links/rechts) — das ergibt eine breite, horizontal spitz
+  // zulaufende Blattform statt einer schmalen, hochkant stehenden Sichel.
   float r = 0.92;
   float c = 0.6;
-  float form = max(length(p - vec2(c, 0.0)), length(p - vec2(-c, 0.0))) - r;
+  float form = max(length(p - vec2(0.0, c)), length(p - vec2(0.0, -c))) - r;
   float kern = clamp(0.5 - form / aa, 0.0, 1.0);
 
   float rippenbreite = 0.07;

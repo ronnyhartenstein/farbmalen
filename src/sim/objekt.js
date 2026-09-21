@@ -63,15 +63,21 @@ export function createObjekt(gl, startX = 0.5, startY = 0.5) {
       aktuell = 1 - aktuell;
     },
 
-    // Direkt additiv auf den Bildschirm, nach dem Anzeigepass.
+    // Direkt auf den Bildschirm, nach dem Anzeigepass. Blending MUSS an sein: ein
+    // Punkt-Sprite ist intern immer ein Quadrat, erst der Alpha-Kanal aus dem
+    // Fragment-Shader (objektDrawFragment) schneidet die Blatt/Kahn-Form heraus —
+    // ohne Blending würde das ganze Quadrat blickdicht eingefärbt.
     zeichnen(groesse) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       progZeichnen.bind();
       gl.uniform1f(progZeichnen.u.uGroesse, groesse);
       gl.bindVertexArray(vaos[aktuell]);
       gl.drawArrays(gl.POINTS, 0, 1);
       gl.bindVertexArray(null);
+      gl.disable(gl.BLEND);
     },
 
     // Zurück auf eine feste Position setzen, ohne die Puffer neu anzulegen.
