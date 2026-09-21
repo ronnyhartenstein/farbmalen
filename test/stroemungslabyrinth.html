@@ -43,8 +43,8 @@
     Ein einzelnes Testobjekt (roter Kreis, <code>src/sim/objekt.js</code> — der
     "Ein-Partikel-Sonderfall" der Glitzer-Technik ohne Zufalls-Respawn) schwimmt im
     Geschwindigkeitsfeld der echten Fluidsimulation. Die goldenen Funken zeigen die
-    Strömung selbst (normale Glitzerpartikel). Aufgabe: mit Rührer, Pusten, Schaber
-    und Seife versuchen, das Objekt vom Start- zum Zielmarker zu lenken — und ehrlich
+    Strömung selbst (normale Glitzerpartikel). Aufgabe: mit Rührer, Pusten und
+    Schaber versuchen, das Objekt vom Start- zum Zielmarker zu lenken — und ehrlich
     einschätzen, ob sich das zielgenau anfühlt oder wie Glücksspiel. Bewusst
     <strong>ohne</strong> Level, Hindernisse, Ziel-/Kollisionserkennung oder
     Gewinn-Screen — nur der reine Steuerungs-Feel.
@@ -54,7 +54,6 @@
   <button type="button" data-werkzeug="ruehrer" aria-pressed="true">1 Rührer</button>
   <button type="button" data-werkzeug="pusten">2 Pusten</button>
   <button type="button" data-werkzeug="schaber">3 Schaber</button>
-  <button type="button" data-werkzeug="seife">4 Seife</button>
   <button type="button" id="reset">Zurücksetzen</button>
   <label>
     Kraft-Multiplikator
@@ -79,7 +78,6 @@ import { createObjekt } from '../src/sim/objekt.js';
 import { ruehrer } from '../src/tools/ruehrer.js';
 import { pusten } from '../src/tools/pusten.js';
 import { schaber } from '../src/tools/schaber.js';
-import { seife } from '../src/tools/seife.js';
 
 const START = { x: 0.15, y: 0.22 };
 const ZIEL = { x: 0.85, y: 0.78 };
@@ -133,8 +131,14 @@ function setzeMarker(el, uv) {
 setzeMarker(document.getElementById('marker-start'), START);
 setzeMarker(document.getElementById('marker-ziel'), ZIEL);
 
-const WERKZEUGE = { ruehrer, pusten, schaber, seife };
+const WERKZEUGE = { ruehrer, pusten, schaber };
 let aktivesWerkzeug = 'ruehrer';
+
+// Erste manuelle Testrunde (Phase 0): Schaber funktioniert, ist aber deutlich zu
+// stark im Vergleich zu Rührer/Pusten — hier, nicht in src/tools/schaber.js
+// gedämpft, damit das gemeinsame Werkzeug für freies Malen/Tintenwächter
+// unangetastet bleibt. Der Kraft-Multiplikator unten wirkt zusätzlich obendrauf.
+const GRUND_FAKTOR = { schaber: 0.4 };
 
 const leiste = document.querySelector('.leiste');
 leiste.addEventListener('click', (ev) => {
@@ -159,13 +163,16 @@ kraftSlider.addEventListener('input', () => {
 
 // Wickelt den echten Pinselkopf, um probeweise stärkere modus-eigene Kräfte
 // auszuprobieren (Phase-0-Verifikationsschritt 5) — src/tools/*.js bleibt unverändert.
+function faktor() {
+  return Number(kraftSlider.value) * (GRUND_FAKTOR[aktivesWerkzeug] ?? 1);
+}
 const basisPinsel = createPinsel(fluid, state);
 const pinsel = {
   farbe: (...a) => basisPinsel.farbe(...a),
   wasser: (...a) => basisPinsel.wasser(...a),
-  schub: (x, y, dx, dy, kraft, r) => basisPinsel.schub(x, y, dx, dy, kraft * Number(kraftSlider.value), r),
-  radial: (x, y, staerke, r) => basisPinsel.radial(x, y, staerke * Number(kraftSlider.value), r),
-  wirbel: (x, y, staerke, r) => basisPinsel.wirbel(x, y, staerke * Number(kraftSlider.value), r),
+  schub: (x, y, dx, dy, kraft, r) => basisPinsel.schub(x, y, dx, dy, kraft * faktor(), r),
+  radial: (x, y, staerke, r) => basisPinsel.radial(x, y, staerke * faktor(), r),
+  wirbel: (x, y, staerke, r) => basisPinsel.wirbel(x, y, staerke * faktor(), r),
 };
 
 passeGroesseAn();
